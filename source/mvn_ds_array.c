@@ -11,11 +11,6 @@
 #include <stdio.h>
 #include <stdlib.h> // For SIZE_MAX
 
-// --- Defines ---
-// These might be better placed in a shared internal header if used by more modules
-#define MVN_DS_ARRAY_INITIAL_CAPACITY 8
-#define MVN_DS_ARRAY_GROWTH_FACTOR    2
-
 // --- Internal Helper Functions ---
 
 /**

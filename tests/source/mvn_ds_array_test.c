@@ -1,3 +1,6 @@
+/*
+ * Copyright (c) 2024 Jake Larson
+ */
 #include "mvn_ds_array_test.h"
 
 #include "mvn_ds/mvn_ds.h"
@@ -14,19 +17,27 @@ static int test_array_creation_and_destruction(void)
     mvn_array_t *array = mvn_array_new();
     TEST_ASSERT(array != NULL, "Failed to create array");
     TEST_ASSERT(array->count == 0, "New array count should be 0");
-    TEST_ASSERT(array->capacity >= 0,
-                "New array capacity should be >= 0"); // >= 0 allows 0 capacity initially
-    TEST_ASSERT(array->capacity == 0 || array->data != NULL,
-                "New array data pointer should be non-NULL if capacity > 0");
+    // Expect default initial capacity now
+    TEST_ASSERT(array->capacity == MVN_DS_ARRAY_INITIAL_CAPACITY,
+                "New array capacity should be MVN_INITIAL_CAPACITY");
+    TEST_ASSERT(array->data != NULL, "New array data pointer should be non-NULL");
 
     mvn_array_free(array); // Should not crash
 
-    // Test with initial capacity
+    // Test with specific initial capacity (e.g., 0)
+    array = mvn_array_new_with_capacity(0);
+    TEST_ASSERT(array != NULL, "Failed to create array with capacity 0");
+    TEST_ASSERT(array->count == 0, "New array (cap 0) count should be 0");
+    TEST_ASSERT(array->capacity == 0, "New array (cap 0) capacity should be 0");
+    TEST_ASSERT(array->data == NULL, "New array (cap 0) data pointer should be NULL");
+    mvn_array_free(array);
+
+    // Test with specific initial capacity > 0
     array = mvn_array_new_with_capacity(10);
-    TEST_ASSERT(array != NULL, "Failed to create array with capacity");
-    TEST_ASSERT(array->count == 0, "New array (cap) count should be 0");
-    TEST_ASSERT(array->capacity == 10, "New array (cap) capacity should be 10");
-    TEST_ASSERT(array->data != NULL, "New array (cap) data pointer should be non-NULL");
+    TEST_ASSERT(array != NULL, "Failed to create array with capacity 10");
+    TEST_ASSERT(array->count == 0, "New array (cap 10) count should be 0");
+    TEST_ASSERT(array->capacity == 10, "New array (cap 10) capacity should be 10");
+    TEST_ASSERT(array->data != NULL, "New array (cap 10) data pointer should be non-NULL");
 
     mvn_array_free(array); // Should not crash
 

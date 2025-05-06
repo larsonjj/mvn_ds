@@ -13,13 +13,6 @@
 #include <stdlib.h> // For SIZE_MAX
 #include <string.h> // For strlen
 
-// --- Defines ---
-// Default initial capacity and growth factor if not defined elsewhere
-#define MVN_DS_HMAP_INITIAL_CAPACITY 8
-#define MVN_DS_HMAP_GROWTH_FACTOR    2
-// Hash map specific load factor
-#define MVN_DS_HMAP_LOAD_FACTOR 0.75
-
 // --- Internal Helper Functions ---
 
 /**

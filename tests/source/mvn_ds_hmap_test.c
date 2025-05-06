@@ -10,6 +10,12 @@
 #include <stdio.h>
 #include <string.h>
 
+// --- Defines ---
+// Get the default initial capacity used in the source file
+#ifndef MVN_INITIAL_CAPACITY
+#define MVN_INITIAL_CAPACITY 8
+#endif
+
 // --- Test Functions ---
 
 static bool test_hmap_creation_and_destruction(void)
@@ -17,17 +23,27 @@ static bool test_hmap_creation_and_destruction(void)
     mvn_hmap_t *hmap = mvn_hmap_new();
     TEST_ASSERT(hmap != NULL, "Failed to create hash map");
     TEST_ASSERT(hmap->count == 0, "New hash map count should be 0");
-    TEST_ASSERT(hmap->capacity > 0, "New hash map capacity should be > 0");
+    // Expect default initial capacity now
+    TEST_ASSERT(hmap->capacity == MVN_DS_HMAP_INITIAL_CAPACITY,
+                "New hash map capacity should be MVN_INITIAL_CAPACITY");
     TEST_ASSERT(hmap->buckets != NULL, "New hash map buckets should not be NULL");
 
     mvn_hmap_free(hmap); // Should not crash
 
-    // Test with initial capacity
+    // Test with specific initial capacity (e.g., 0)
+    hmap = mvn_hmap_new_with_capacity(0);
+    TEST_ASSERT(hmap != NULL, "Failed to create hash map with capacity 0");
+    TEST_ASSERT(hmap->count == 0, "New hash map (cap 0) count should be 0");
+    TEST_ASSERT(hmap->capacity == 0, "New hash map (cap 0) capacity should be 0");
+    TEST_ASSERT(hmap->buckets == NULL, "New hash map (cap 0) buckets should be NULL");
+    mvn_hmap_free(hmap);
+
+    // Test with specific initial capacity > 0
     hmap = mvn_hmap_new_with_capacity(32);
-    TEST_ASSERT(hmap != NULL, "Failed to create hash map with capacity");
-    TEST_ASSERT(hmap->count == 0, "New hash map (cap) count should be 0");
-    TEST_ASSERT(hmap->capacity == 32, "New hash map (cap) capacity should be 32");
-    TEST_ASSERT(hmap->buckets != NULL, "New hash map (cap) buckets should not be NULL");
+    TEST_ASSERT(hmap != NULL, "Failed to create hash map with capacity 32");
+    TEST_ASSERT(hmap->count == 0, "New hash map (cap 32) count should be 0");
+    TEST_ASSERT(hmap->capacity == 32, "New hash map (cap 32) capacity should be 32");
+    TEST_ASSERT(hmap->buckets != NULL, "New hash map (cap 32) buckets should not be NULL");
 
     mvn_hmap_free(hmap); // Should not crash
 

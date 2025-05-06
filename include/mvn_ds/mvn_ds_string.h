@@ -14,8 +14,8 @@
 extern "C" {
 #endif /* __cplusplus */
 
-// --- Dynamic String ---
-// struct mvn_string_t is now defined in mvn_ds_types.h
+#define MVN_DS_STRING_INITIAL_CAPACITY 8
+#define MVN_DS_STRING_GROWTH_FACTOR    2
 
 // --- String Operations ---
 

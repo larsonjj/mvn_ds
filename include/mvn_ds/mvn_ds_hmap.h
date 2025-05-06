@@ -14,16 +14,11 @@
 extern "C" {
 #endif /* __cplusplus */
 
-// --- Forward Declarations ---
-// No longer needed, included via mvn_ds_types.h
-// typedef struct mvn_val_t    mvn_val_t;
-// typedef struct mvn_string_t mvn_string_t;
-
-// --- Hash Map Entry ---
-// struct mvn_hmap_entry_t is now defined in mvn_ds_types.h
-
-// --- Hash Map ---
-// struct mvn_hmap_t is now defined in mvn_ds_types.h
+// Default initial capacity and growth factor if not defined elsewhere
+#define MVN_DS_HMAP_INITIAL_CAPACITY 8
+#define MVN_DS_HMAP_GROWTH_FACTOR    2
+// Hash map specific load factor
+#define MVN_DS_HMAP_LOAD_FACTOR 0.75
 
 // --- Hash Map Operations ---
 

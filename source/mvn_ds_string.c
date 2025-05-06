@@ -3,75 +3,69 @@
  */
 #include "mvn_ds/mvn_ds_string.h"
 
-#include "mvn_ds/mvn_ds_utils.h" // Provides mvn_reallocate
+#include "mvn_ds/mvn_ds_utils.h" // Provides mvn_reallocate, memory macros
 
 #include <assert.h>
 #include <stdbool.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <stdlib.h> // For SIZE_MAX
+#include <string.h> // For strlen, memcpy, memcmp
 
-// --- Defines ---
-// NOTE: These might be better placed in a shared internal header
-#define MVN_DS_STRING_INITIAL_CAPACITY 8
-#define MVN_DS_STRING_GROWTH_FACTOR    2
+// FNV-1a constants
+#define FNV_OFFSET_BASIS 2166136261U
+#define FNV_PRIME        16777619U
 
-// --- Internal Helper Functions ---
+// --- Static Helper Functions ---
 
 /**
- * @internal
- * @brief Ensures string has enough capacity, reallocating if necessary.
- * @param string The string to check/grow.
- * @param additional_length The minimum additional length needed.
- * @return true if successful (or no resize needed), false on allocation
- * failure.
+ * @brief Ensures the string has enough capacity for a given additional length.
+ * Resizes the string if necessary.
+ * @param string The string to check/resize. Must not be NULL.
+ * @param additional_length The number of additional characters needed (excluding null terminator).
+ * @return true if successful (or no resize needed), false on allocation failure.
  */
 static bool mvn_string_ensure_capacity(mvn_string_t *string, size_t additional_length)
 {
     assert(string != NULL);
-    // Check for potential overflow before calculating required capacity
-    if (SIZE_MAX - additional_length < string->length) {
-        fprintf(stderr, "[MVN_DS_STRING] String length overflow during capacity check.\n");
-        return false;
-    }
-    size_t required_capacity = string->length + additional_length;
 
-    if (required_capacity < string->capacity) {
-        return true; // Enough space
+    size_t required_length = string->length + additional_length;
+
+    // Check for potential overflow before comparing with capacity
+    if (required_length < string->length) {
+        fprintf(stderr, "[MVN_DS_STRING] String length overflow detected.\n");
+        return false; // Overflow
     }
 
-    size_t old_capacity = string->capacity;
-    size_t new_capacity = old_capacity < MVN_DS_STRING_INITIAL_CAPACITY ?
-                              MVN_DS_STRING_INITIAL_CAPACITY :
-                              old_capacity * MVN_DS_STRING_GROWTH_FACTOR;
-    // Ensure the new capacity is at least what's required
-    while (new_capacity <= required_capacity) {
-        // Check for potential overflow during growth calculation
-        if (SIZE_MAX / MVN_DS_STRING_GROWTH_FACTOR < new_capacity) {
+    if (required_length <= string->capacity) {
+        return true; // Enough capacity
+    }
+
+    // Calculate new capacity
+    size_t new_capacity = string->capacity;
+    if (new_capacity == 0) {
+        new_capacity = MVN_DS_STRING_INITIAL_CAPACITY;
+    }
+    while (new_capacity < required_length) {
+        // Check for overflow before multiplying
+        if (new_capacity > SIZE_MAX / MVN_DS_STRING_GROWTH_FACTOR) {
             fprintf(stderr,
-                    "[MVN_DS_STRING] String capacity overflow during resize calculation.\n");
-            // Try setting to exactly required capacity if growth calculation overflows
-            if (required_capacity > old_capacity) {
-                new_capacity = required_capacity;
-                break; // Exit loop, try allocating required_capacity
-            } else {
-                return false; // Cannot even allocate required capacity
-            }
+                    "[MVN_DS_STRING] String capacity overflow during growth calculation.\n");
+            return false; // Overflow
         }
         new_capacity *= MVN_DS_STRING_GROWTH_FACTOR;
     }
 
-    // +1 for null terminator
-    if (SIZE_MAX - 1 < new_capacity) {
-        fprintf(stderr, "[MVN_DS_STRING] String capacity overflow adding null terminator space.\n");
-        return false;
+    // Check for overflow before adding 1 for null terminator
+    if (new_capacity == SIZE_MAX) {
+        fprintf(stderr, "[MVN_DS_STRING] String capacity reached SIZE_MAX.\n");
+        return false; // Cannot add null terminator
     }
-    size_t allocation_size = new_capacity + 1;
+    size_t allocation_size = new_capacity + 1; // +1 for null terminator
 
-    char *new_data = (char *)mvn_reallocate(
-        string->data, old_capacity + 1, allocation_size); // This now calls the header version
+    char *new_data = (char *)MVN_DS_REALLOC(string->data, allocation_size);
     if (!new_data) {
-        return false; // Reallocation failed
+        fprintf(stderr, "[MVN_DS_STRING] Failed to reallocate string data.\n");
+        return false; // Allocation failure
     }
 
     string->data     = new_data;
@@ -83,111 +77,162 @@ static bool mvn_string_ensure_capacity(mvn_string_t *string, size_t additional_l
 
 mvn_string_t *mvn_string_new_with_capacity(size_t capacity)
 {
-    mvn_string_t *string = (mvn_string_t *)MVN_DS_MALLOC(sizeof(mvn_string_t));
-    if (!string) {
+    mvn_string_t *string_ptr = (mvn_string_t *)MVN_DS_MALLOC(sizeof(mvn_string_t));
+    if (!string_ptr) {
         return NULL;
     }
 
-    string->length   = 0;
-    string->capacity = capacity;
-    // +1 for null terminator
-    if (SIZE_MAX - 1 < capacity) { // Check overflow before adding 1
-        MVN_DS_FREE(string);
+    string_ptr->length   = 0;
+    string_ptr->capacity = capacity;
+
+    // Check for overflow before adding 1 for null terminator
+    if (capacity == SIZE_MAX) {
+        MVN_DS_FREE(string_ptr);
+        fprintf(stderr, "[MVN_DS_STRING] Initial capacity reached SIZE_MAX.\n");
         return NULL;
     }
-    string->data = (char *)MVN_DS_MALLOC(capacity + 1);
-    if (!string->data) {
-        MVN_DS_FREE(string);
+    size_t allocation_size = capacity + 1; // +1 for null terminator
+
+    string_ptr->data = (char *)MVN_DS_MALLOC(allocation_size);
+    if (!string_ptr->data) {
+        MVN_DS_FREE(string_ptr);
         return NULL;
     }
-    string->data[0] = '\0'; // Ensure null termination for empty string
-    return string;
+    string_ptr->data[0] = '\0'; // Ensure it's always null-terminated
+
+    return string_ptr;
 }
 
 mvn_string_t *mvn_string_new(const char *chars)
 {
-    if (!chars) {
-        return NULL; // Handle null input gracefully
-    }
-    size_t length = strlen(chars);
-    // Start with at least initial capacity or required length
-    size_t initial_capacity =
-        length < MVN_DS_STRING_INITIAL_CAPACITY ? MVN_DS_STRING_INITIAL_CAPACITY : length;
-    mvn_string_t *string = mvn_string_new_with_capacity(initial_capacity);
-    if (!string) {
+    size_t initial_length = (chars == NULL) ? 0 : strlen(chars);
+    // Determine initial capacity: at least the length, but use default if larger
+    size_t initial_capacity = (initial_length > MVN_DS_STRING_INITIAL_CAPACITY) ?
+                                  initial_length :
+                                  MVN_DS_STRING_INITIAL_CAPACITY;
+
+    mvn_string_t *string_ptr = mvn_string_new_with_capacity(initial_capacity);
+    if (!string_ptr) {
         return NULL;
     }
 
-    memcpy(string->data, chars, length);
-    string->data[length] = '\0';
-    string->length       = length;
-    return string;
+    if (initial_length > 0) {
+        memcpy(string_ptr->data, chars, initial_length);
+        string_ptr->data[initial_length] = '\0'; // Ensure null termination
+        string_ptr->length               = initial_length;
+    }
+    // Capacity is already set by mvn_string_new_with_capacity
+
+    return string_ptr;
 }
 
-void mvn_string_free(mvn_string_t *string)
+void mvn_string_free(mvn_string_t *string_ptr)
 {
-    if (!string) {
+    if (string_ptr == NULL) {
         return;
     }
-    MVN_DS_FREE(string->data); // Free the character buffer
-    MVN_DS_FREE(string);       // Free the struct itself
+    MVN_DS_FREE(string_ptr->data); // Free the character buffer
+    MVN_DS_FREE(string_ptr);       // Free the struct itself
 }
 
-bool mvn_string_append_cstr(mvn_string_t *string, const char *chars)
+bool mvn_string_append_cstr(mvn_string_t *string_ptr, const char *chars)
 {
-    if (!string || !chars) {
+    if (string_ptr == NULL || chars == NULL) {
         return false;
     }
+
     size_t append_len = strlen(chars);
     if (append_len == 0) {
         return true; // Nothing to append
     }
 
-    if (!mvn_string_ensure_capacity(string, append_len)) {
-        return false; // Failed to resize
+    if (!mvn_string_ensure_capacity(string_ptr, append_len)) {
+        return false; // Failed to ensure capacity
     }
 
-    memcpy(string->data + string->length, chars, append_len);
-    string->length += append_len;
-    string->data[string->length] = '\0'; // Ensure null termination
+    // Append the new characters
+    memcpy(string_ptr->data + string_ptr->length, chars, append_len);
+    string_ptr->length += append_len;
+    string_ptr->data[string_ptr->length] = '\0'; // Ensure null termination
+
     return true;
 }
 
-bool mvn_string_equal(const mvn_string_t *str_one, const mvn_string_t *str_two)
+// Implementation for mvn_string_append
+bool mvn_string_append(mvn_string_t *dest_ptr, const mvn_string_t *src_ptr)
 {
-    // If one is NULL and the other isn't, they are not equal.
-    if (!str_one || !str_two) {
-        // If both are NULL, consider them unequal as per previous test logic.
-        // If only one is NULL, they are unequal.
+    if (dest_ptr == NULL || src_ptr == NULL) {
         return false;
     }
-    // If they point to the exact same memory (and are not NULL), they are equal.
-    if (str_one == str_two) {
-        return true;
+    if (src_ptr->length == 0) {
+        return true; // Nothing to append
     }
-    // Both are non-NULL and different pointers, compare content.
-    // Check length first for quick exit
-    if (str_one->length != str_two->length) {
-        return false;
+
+    // Use the existing append_cstr logic, passing the source data and length
+    if (!mvn_string_ensure_capacity(dest_ptr, src_ptr->length)) {
+        return false; // Failed to ensure capacity
     }
-    // If length is 0, they are equal (already checked lengths are same)
-    if (str_one->length == 0) {
-        return true;
-    }
-    // Compare data content
-    return memcmp(str_one->data, str_two->data, str_one->length) == 0;
+
+    // Append the source string's data
+    memcpy(dest_ptr->data + dest_ptr->length, src_ptr->data, src_ptr->length);
+    dest_ptr->length += src_ptr->length;
+    dest_ptr->data[dest_ptr->length] = '\0'; // Ensure null termination
+
+    return true;
 }
 
-uint32_t mvn_string_hash(const mvn_string_t *string)
+bool mvn_string_equal(const mvn_string_t *str1_ptr, const mvn_string_t *str2_ptr)
 {
-    if (!string || !string->data) {
-        return 0; // Handle NULL string or data
+    if (str1_ptr == str2_ptr) {
+        return true; // Same pointer or both NULL
+    }
+    if (str1_ptr == NULL || str2_ptr == NULL) {
+        return false; // One is NULL, the other isn't
+    }
+    if (str1_ptr->length != str2_ptr->length) {
+        return false; // Different lengths
+    }
+    if (str1_ptr->length == 0) {
+        return true; // Both are empty strings
+    }
+    // Compare content using memcmp (safe for potential embedded nulls, though not expected here)
+    return memcmp(str1_ptr->data, str2_ptr->data, str1_ptr->length) == 0;
+}
+
+// Implementation for mvn_string_equal_cstr
+bool mvn_string_equal_cstr(const mvn_string_t *str1_ptr, const char *cstr2)
+{
+    if (str1_ptr == NULL || cstr2 == NULL) {
+        return (str1_ptr == NULL && cstr2 == NULL); // True only if both are NULL (edge case)
+                                                    // Standard behavior is false if one is NULL.
+                                                    // Let's stick to false if either is NULL.
+        // return false; // More conventional: comparison with NULL is false
+    }
+    if (str1_ptr == NULL || cstr2 == NULL) {
+        return false;
     }
 
-    uint32_t hash_value = 2166136261u; // FNV offset basis
-    for (size_t index = 0; index < string->length; index++) {
-        hash_value ^= (uint8_t)string->data[index];
-        hash_value *= 16777619; // FNV prime
+    size_t cstr2_len = strlen(cstr2);
+    if (str1_ptr->length != cstr2_len) {
+        return false; // Different lengths
+    }
+    if (str1_ptr->length == 0) {
+        return true; // Both are empty
+    }
+    // Compare content
+    return memcmp(str1_ptr->data, cstr2, str1_ptr->length) == 0;
+}
+
+uint32_t mvn_string_hash(const mvn_string_t *string_ptr)
+{
+    if (string_ptr == NULL || string_ptr->data == NULL) {
+        return 0; // Or some other default hash for NULL
+    }
+
+    uint32_t hash_value = FNV_OFFSET_BASIS;
+    for (size_t index = 0; index < string_ptr->length; ++index) {
+        hash_value ^= (uint32_t)string_ptr->data[index];
+        hash_value *= FNV_PRIME;
     }
     return hash_value;
 }

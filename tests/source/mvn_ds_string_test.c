@@ -7,8 +7,9 @@
 #include "mvn_ds_test_utils.h"
 
 #include <stdbool.h>
+#include <stdint.h> // For uint32_t
 #include <stdio.h>
-#include <string.h>
+#include <string.h> // For strcmp, strlen, strncmp
 
 // --- Test Functions ---
 
@@ -91,6 +92,48 @@ static bool test_string_append(void)
     return true; // Test passed
 }
 
+static bool test_string_append_mvn_string(void)
+{
+    mvn_string_t *str_dest  = mvn_string_new("Destination");
+    mvn_string_t *str_src   = mvn_string_new("_Source");
+    mvn_string_t *str_empty = mvn_string_new("");
+    TEST_ASSERT(str_dest != NULL && str_src != NULL && str_empty != NULL,
+                "Failed to create strings for append test");
+
+    // Append non-empty to non-empty
+    bool append_ok = mvn_string_append(str_dest, str_src);
+    TEST_ASSERT(append_ok, "Append mvn_string failed");
+    TEST_ASSERT(str_dest->length == 18, "Length mismatch after append mvn_string");
+    TEST_ASSERT(strcmp(str_dest->data, "Destination_Source") == 0,
+                "Content mismatch after append mvn_string");
+
+    // Append empty to non-empty
+    size_t length_before = str_dest->length;
+    append_ok            = mvn_string_append(str_dest, str_empty);
+    TEST_ASSERT(append_ok, "Append empty mvn_string failed");
+    TEST_ASSERT(str_dest->length == length_before,
+                "Length changed after appending empty mvn_string");
+    TEST_ASSERT(strcmp(str_dest->data, "Destination_Source") == 0,
+                "Content changed after appending empty mvn_string");
+
+    // Append non-empty to empty
+    append_ok = mvn_string_append(str_empty, str_src);
+    TEST_ASSERT(append_ok, "Append to empty mvn_string failed");
+    TEST_ASSERT(str_empty->length == 7, "Length mismatch after append to empty");
+    TEST_ASSERT(strcmp(str_empty->data, "_Source") == 0, "Content mismatch after append to empty");
+
+    // Append NULL string (should fail)
+    append_ok = mvn_string_append(str_dest, NULL);
+    TEST_ASSERT(!append_ok, "Append NULL mvn_string should fail");
+    append_ok = mvn_string_append(NULL, str_src);
+    TEST_ASSERT(!append_ok, "Append to NULL mvn_string should fail");
+
+    mvn_string_free(str_dest);
+    mvn_string_free(str_src);
+    mvn_string_free(str_empty);
+    return true; // Test passed
+}
+
 static bool test_string_equal(void)
 {
     mvn_string_t *str_a1 = mvn_string_new("abc");
@@ -131,6 +174,113 @@ static bool test_string_equal(void)
     mvn_string_free(str_d);
     mvn_string_free(str_e);
 
+    return true; // Test passed
+}
+
+static bool test_string_equal_cstr(void)
+{
+    mvn_string_t *str_mvn    = mvn_string_new("compare_me");
+    mvn_string_t *str_empty  = mvn_string_new("");
+    const char   *cstr_equal = "compare_me";
+    const char   *cstr_diff  = "compare_you";
+    const char   *cstr_empty = "";
+
+    TEST_ASSERT(str_mvn != NULL && str_empty != NULL,
+                "Failed to create strings for cstr equal test");
+
+    // Equal
+    TEST_ASSERT(mvn_string_equal_cstr(str_mvn, cstr_equal), "Equal cstr reported as unequal");
+    TEST_ASSERT(mvn_string_equal_cstr(str_empty, cstr_empty), "Empty cstr reported as unequal");
+
+    // Unequal
+    TEST_ASSERT(!mvn_string_equal_cstr(str_mvn, cstr_diff), "Unequal cstr reported as equal");
+    TEST_ASSERT(!mvn_string_equal_cstr(str_mvn, cstr_empty),
+                "String and empty cstr reported as equal");
+    TEST_ASSERT(!mvn_string_equal_cstr(str_empty, cstr_equal),
+                "Empty string and cstr reported as equal");
+
+    // NULL checks
+    TEST_ASSERT(!mvn_string_equal_cstr(str_mvn, NULL), "String and NULL cstr reported as equal");
+    TEST_ASSERT(!mvn_string_equal_cstr(NULL, cstr_equal), "NULL string and cstr reported as equal");
+    TEST_ASSERT(!mvn_string_equal_cstr(NULL, NULL), "NULL string and NULL cstr reported as equal");
+
+    mvn_string_free(str_mvn);
+    mvn_string_free(str_empty);
+    return true; // Test passed
+}
+
+static bool test_string_resize(void)
+{
+    // Start with small capacity
+    mvn_string_t *str_resize = mvn_string_new_with_capacity(4);
+    TEST_ASSERT(str_resize != NULL, "Failed to create string for resize test");
+    TEST_ASSERT(str_resize->capacity == 4, "Initial capacity mismatch");
+
+    // Append to fill capacity exactly
+    bool append_ok = mvn_string_append_cstr(str_resize, "1234");
+    TEST_ASSERT(append_ok, "Append to fill capacity failed");
+    TEST_ASSERT(str_resize->length == 4, "Length after filling capacity mismatch");
+    TEST_ASSERT(str_resize->capacity == 4, "Capacity should not change yet");
+
+    // Append one more character to trigger resize
+    append_ok = mvn_string_append_cstr(str_resize, "5");
+    TEST_ASSERT(append_ok, "Append to trigger resize failed");
+    TEST_ASSERT(str_resize->length == 5, "Length after resize mismatch");
+    // Capacity should grow (e.g., 4 * 2 = 8, or initial 8 if growth factor logic differs)
+    TEST_ASSERT(str_resize->capacity >= 5, "Capacity did not increase after resize");
+    TEST_ASSERT(strcmp(str_resize->data, "12345") == 0, "Content mismatch after resize");
+
+    size_t capacity_after_first_resize = str_resize->capacity;
+
+    // Append a much larger string to force further resize
+    const char *long_append = "abcdefghijklmnopqrstuvwxyz";
+    append_ok               = mvn_string_append_cstr(str_resize, long_append);
+    TEST_ASSERT(append_ok, "Append long string after resize failed");
+    size_t final_length = 5 + strlen(long_append);
+    TEST_ASSERT(str_resize->length == final_length, "Length after second resize mismatch");
+    TEST_ASSERT(str_resize->capacity >= final_length, "Capacity too small after second resize");
+    TEST_ASSERT(str_resize->capacity > capacity_after_first_resize,
+                "Capacity did not increase after second resize");
+    TEST_ASSERT(strncmp(str_resize->data, "12345abcdefghijklmnopqrstuvwxyz", final_length) == 0,
+                "Content mismatch after second resize");
+
+    mvn_string_free(str_resize);
+    return true; // Test passed
+}
+
+static bool test_string_hash(void)
+{
+    mvn_string_t *str_one   = mvn_string_new("hello world");
+    mvn_string_t *str_two   = mvn_string_new("hello world");
+    mvn_string_t *str_diff  = mvn_string_new("hello_world");
+    mvn_string_t *str_empty = mvn_string_new("");
+
+    TEST_ASSERT(str_one != NULL && str_two != NULL && str_diff != NULL && str_empty != NULL,
+                "Failed to create strings for hash test");
+
+    uint32_t hash_one   = mvn_string_hash(str_one);
+    uint32_t hash_two   = mvn_string_hash(str_two);
+    uint32_t hash_diff  = mvn_string_hash(str_diff);
+    uint32_t hash_empty = mvn_string_hash(str_empty);
+    uint32_t hash_null  = mvn_string_hash(NULL);
+
+    // Basic consistency
+    TEST_ASSERT(hash_one == hash_two, "Hashes of equal strings do not match");
+    TEST_ASSERT(hash_one != hash_diff, "Hashes of different strings match");
+    TEST_ASSERT(hash_one != hash_empty, "Hash of string matches hash of empty string");
+
+    // Check non-zero hash for non-empty string (highly likely for FNV-1a)
+    TEST_ASSERT(hash_one != 0, "Hash of non-empty string is zero");
+    // FNV-1a hash of empty string is non-zero (offset basis)
+    TEST_ASSERT(hash_empty != 0, "Hash of empty string is zero");
+
+    // NULL handling
+    TEST_ASSERT(hash_null == 0, "Hash of NULL string should be 0");
+
+    mvn_string_free(str_one);
+    mvn_string_free(str_two);
+    mvn_string_free(str_diff);
+    mvn_string_free(str_empty);
     return true; // Test passed
 }
 
@@ -177,7 +327,11 @@ int run_string_tests(int *passed_tests, int *failed_tests, int *total_tests)
 
     RUN_TEST(test_string_creation_and_destruction);
     RUN_TEST(test_string_append);
+    RUN_TEST(test_string_append_mvn_string); // Added
     RUN_TEST(test_string_equal);
+    RUN_TEST(test_string_equal_cstr); // Added
+    RUN_TEST(test_string_resize);     // Added
+    RUN_TEST(test_string_hash);       // Added
     RUN_TEST(test_string_val_integration);
 
     int tests_run = (*passed_tests - passed_before) + (*failed_tests - failed_before);
@@ -193,7 +347,7 @@ int main(void)
     int failed = 0;
     int total  = 0;
 
-    run_string_tests(&passed, &failed, &total); // Corrected function name
+    run_string_tests(&passed, &failed, &total);
 
     printf("\n===== STRING TEST SUMMARY =====\n");
     print_test_summary(total, passed, failed);

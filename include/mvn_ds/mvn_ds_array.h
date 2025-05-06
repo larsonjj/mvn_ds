@@ -13,12 +13,8 @@
 extern "C" {
 #endif /* __cplusplus */
 
-// --- Forward Declarations ---
-// No longer needed, included via mvn_ds_types.h
-// typedef struct mvn_val_t mvn_val_t;
-
-// --- Dynamic Array ---
-// struct mvn_array_t is now defined in mvn_ds_types.h
+#define MVN_DS_ARRAY_INITIAL_CAPACITY 8
+#define MVN_DS_ARRAY_GROWTH_FACTOR    2
 
 // --- Array Operations ---
 
