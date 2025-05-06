@@ -8,17 +8,17 @@ A C99 compatible library providing a generic set of data structures, including d
 
 Key data types include:
 
-- `mvn_val_t`: A tagged union type that can hold various primitive types (`NULL`, `bool`, `int32_t`, `int64_t`, `float`, `double`), as well as dynamic `mvn_string_t`, `mvn_arr_t`, and `mvn_hmap_t`.
-- `mvn_string_t`: A dynamic string implementation.
+- `mvn_val_t`: A tagged union type that can hold various primitive types (`NULL`, `bool`, `int32_t`, `int64_t`, `float`, `double`), as well as dynamic `mvn_str_t`, `mvn_arr_t`, and `mvn_hmap_t`.
+- `mvn_str_t`: A dynamic string implementation.
 - `mvn_arr_t`: A dynamic array (vector) implementation capable of storing `mvn_val_t` values, allowing for heterogeneous collections and nesting.
-- `mvn_hmap_t`: A hash map implementation using `mvn_string_t` keys and storing `mvn_val_t` values, also supporting nesting.
+- `mvn_hmap_t`: A hash map implementation using `mvn_str_t` keys and storing `mvn_val_t` values, also supporting nesting.
 
 ## Features
 
 - **C99 Compatible**: Designed to work with standard C99.
 - **Generic Value Type**: `mvn_val_t` can hold primitives, strings, arrays, and hash maps.
 - **Dynamic Collections**:
-  - Dynamic strings (`mvn_string_t`)
+  - Dynamic strings (`mvn_str_t`)
   - Dynamic arrays (`mvn_arr_t`)
   - String-key hash maps (`mvn_hmap_t`)
 - **Nesting**: Arrays and hash maps can contain other arrays and hash maps, allowing for complex, nested data structures.
@@ -92,17 +92,17 @@ Example (basic string usage):
 #include <stdio.h>
 
 int main() {
-    mvn_string_t* my_string = mvn_string_new("Hello, mvn_ds!");
+    mvn_str_t* my_string = mvn_str_new("Hello, mvn_ds!");
     if (my_string) {
         printf("String: %s (Length: %zu, Capacity: %zu)\n",
-               mvn_string_get_data(my_string),
-               mvn_string_get_length(my_string),
-               mvn_string_get_capacity(my_string));
+               mvn_str_get_data(my_string),
+               mvn_str_get_length(my_string),
+               mvn_str_get_capacity(my_string));
 
-        mvn_string_append_cstr(my_string, " Appended text.");
-        printf("Updated String: %s\n", mvn_string_get_data(my_string));
+        mvn_str_append_cstr(my_string, " Appended text.");
+        printf("Updated String: %s\n", mvn_str_get_data(my_string));
 
-        mvn_string_free(my_string);
+        mvn_str_free(my_string);
     }
     return 0;
 }
@@ -123,7 +123,7 @@ int main() {
     }
 
     if (val_message.type == MVN_VAL_STRING && val_message.str != NULL) {
-        printf("String value: %s\n", mvn_string_get_data(val_message.str));
+        printf("String value: %s\n", mvn_str_get_data(val_message.str));
     }
 
     // mvn_val_free will handle freeing the string data for val_message
