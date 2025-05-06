@@ -21,7 +21,7 @@
  * @param new_size Desired new size. If 0, frees the pointer.
  * @return Pointer to the reallocated memory, or NULL if new_size is 0 or allocation fails.
  */
-static void *mvn_reallocate_arr(void *pointer, size_t new_size)
+static void *mvn_arr_reallocate(void *pointer, size_t new_size)
 {
     // old_size is not needed for standard realloc
     if (new_size == 0) {
@@ -74,9 +74,9 @@ static bool mvn_arr_ensure_capacity(mvn_arr_t *array)
     }
     size_t allocation_size = new_capacity * sizeof(mvn_val_t);
 
-    // Pass only pointer and new_size to the local mvn_reallocate_arr
+    // Pass only pointer and new_size to the local mvn_arr_reallocate
     mvn_val_t *new_data =
-        (mvn_val_t *)mvn_reallocate_arr(array->data, allocation_size); // Updated call site
+        (mvn_val_t *)mvn_arr_reallocate(array->data, allocation_size); // Updated call site
     if (!new_data) {
         return false;
     }
