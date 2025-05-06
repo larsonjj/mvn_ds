@@ -49,6 +49,27 @@ static bool test_string_creation_and_destruction(void)
     return true; // Test passed
 }
 
+static bool test_string_zero_capacity_creation(void)
+{
+    mvn_string_t *str_zero = mvn_string_new_with_capacity(0);
+    TEST_ASSERT(str_zero != NULL, "Failed to create string with zero capacity");
+    TEST_ASSERT(str_zero->length == 0, "Zero capacity string length should be 0");
+    TEST_ASSERT(str_zero->capacity == 0, "Zero capacity string capacity should be 0");
+    TEST_ASSERT(str_zero->data != NULL, "Zero capacity string data should not be NULL");
+    TEST_ASSERT(str_zero->data[0] == '\0', "Zero capacity string should be null-terminated");
+
+    // Append to trigger resize
+    bool append_ok = mvn_string_append_cstr(str_zero, "test");
+    TEST_ASSERT(append_ok, "Append to zero capacity string failed");
+    TEST_ASSERT(str_zero->length == 4, "Length after append to zero capacity mismatch");
+    TEST_ASSERT(str_zero->capacity >= 4, "Capacity after append to zero capacity too small");
+    TEST_ASSERT(strcmp(str_zero->data, "test") == 0,
+                "Content after append to zero capacity mismatch");
+
+    mvn_string_free(str_zero);
+    return true; // Test passed
+}
+
 static bool test_string_append(void)
 {
     mvn_string_t *str_main = mvn_string_new("start");
@@ -131,6 +152,24 @@ static bool test_string_append_mvn_string(void)
     mvn_string_free(str_dest);
     mvn_string_free(str_src);
     mvn_string_free(str_empty);
+    return true; // Test passed
+}
+
+static bool test_string_append_null_cstr(void)
+{
+    mvn_string_t *str_dest = mvn_string_new("start");
+    TEST_ASSERT(str_dest != NULL, "Failed to create string for append NULL test");
+
+    size_t original_length = str_dest->length;
+    bool   append_ok       = mvn_string_append_cstr(str_dest, NULL);
+    // The function should handle NULL gracefully, likely returning false or doing nothing
+    TEST_ASSERT(!append_ok, "Appending NULL cstr should return false");
+    TEST_ASSERT(str_dest->length == original_length,
+                "Length should not change after appending NULL cstr");
+    TEST_ASSERT(strcmp(str_dest->data, "start") == 0,
+                "Content should not change after appending NULL cstr");
+
+    mvn_string_free(str_dest);
     return true; // Test passed
 }
 
@@ -310,6 +349,15 @@ static bool test_string_val_integration(void)
     return true; // Test passed
 }
 
+static bool test_string_val_take_null(void)
+{
+    mvn_val_t val_null = mvn_val_string_take(NULL);
+    TEST_ASSERT(val_null.type == MVN_VAL_NULL, "Taking NULL string should result in MVN_VAL_NULL");
+    // No need to free val_null as it's NULL type
+
+    return true; // Test passed
+}
+
 // --- Test Runner ---
 
 /**
@@ -326,13 +374,16 @@ int run_string_tests(int *passed_tests, int *failed_tests, int *total_tests)
     int failed_before = *failed_tests;
 
     RUN_TEST(test_string_creation_and_destruction);
+    RUN_TEST(test_string_zero_capacity_creation); // Added
     RUN_TEST(test_string_append);
-    RUN_TEST(test_string_append_mvn_string); // Added
+    RUN_TEST(test_string_append_mvn_string);
+    RUN_TEST(test_string_append_null_cstr); // Added
     RUN_TEST(test_string_equal);
-    RUN_TEST(test_string_equal_cstr); // Added
-    RUN_TEST(test_string_resize);     // Added
-    RUN_TEST(test_string_hash);       // Added
+    RUN_TEST(test_string_equal_cstr);
+    RUN_TEST(test_string_resize);
+    RUN_TEST(test_string_hash);
     RUN_TEST(test_string_val_integration);
+    RUN_TEST(test_string_val_take_null); // Added
 
     int tests_run = (*passed_tests - passed_before) + (*failed_tests - failed_before);
     (*total_tests) += tests_run;
