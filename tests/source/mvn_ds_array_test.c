@@ -6,7 +6,8 @@
 #include "mvn_ds/mvn_ds.h"
 #include "mvn_ds_test_utils.h"
 
-#include <math.h> // For fabsf, fabs
+#include <math.h>    // For fabsf, fabs
+#include <stdbool.h> // Include for bool type
 #include <stdio.h>
 #include <string.h>
 
@@ -265,6 +266,75 @@ static int test_array_ownership_set(void)
     return true; // Test passed (pending memory check)
 }
 
+/**
+ * @brief Tests freeing a NULL array pointer.
+ */
+static bool test_array_free_null(void)
+{
+    mvn_array_free(NULL); // Should not crash or cause issues
+    return true;          // Test passed if it doesn't crash
+}
+
+/**
+ * @brief Tests pushing elements into an array starting with zero capacity.
+ */
+static bool test_array_resize_from_zero(void)
+{
+    mvn_array_t *zero_cap_array = mvn_array_new_with_capacity(0);
+    TEST_ASSERT(zero_cap_array != NULL, "Failed to create zero-capacity array");
+    TEST_ASSERT(zero_cap_array->count == 0, "Initial count should be 0");
+    TEST_ASSERT(zero_cap_array->capacity == 0, "Initial capacity should be 0");
+    TEST_ASSERT(zero_cap_array->data == NULL, "Initial data should be NULL");
+
+    // First push should trigger allocation and resize
+    bool push_ok = mvn_array_push(zero_cap_array, mvn_val_i32(100));
+    TEST_ASSERT(push_ok, "Push into zero-capacity array failed");
+    TEST_ASSERT(zero_cap_array->count == 1, "Count should be 1 after first push");
+    TEST_ASSERT(zero_cap_array->capacity > 0, "Capacity should be > 0 after first push");
+    TEST_ASSERT(zero_cap_array->data != NULL, "Data should not be NULL after first push");
+
+    mvn_val_t *val = mvn_array_get(zero_cap_array, 0);
+    TEST_ASSERT(val != NULL && val->type == MVN_VAL_I32 && val->i32 == 100,
+                "Value verification failed after push to zero-cap array");
+
+    mvn_array_free(zero_cap_array);
+    return true; // Test passed
+}
+
+/**
+ * @brief Tests mvn_array_set replacing primitive types.
+ */
+static bool test_array_set_primitive_replacement(void)
+{
+    mvn_array_t *array = mvn_array_new();
+    TEST_ASSERT(array != NULL, "Failed to create array for primitive set test");
+
+    // Push initial primitive values
+    mvn_array_push(array, mvn_val_i32(1));
+    mvn_array_push(array, mvn_val_f32(2.0f));
+    TEST_ASSERT(array->count == 2, "Initial count should be 2");
+
+    // 1. Set primitive over primitive
+    bool set_ok = mvn_array_set(array, 0, mvn_val_bool(true));
+    TEST_ASSERT(set_ok, "Set primitive over primitive failed");
+    mvn_val_t *val = mvn_array_get(array, 0);
+    TEST_ASSERT(val != NULL && val->type == MVN_VAL_BOOL && val->b == true,
+                "Value mismatch after setting primitive over primitive");
+    TEST_ASSERT(array->count == 2, "Count should remain 2"); // Ensure count doesn't change
+
+    // 2. Set dynamic over primitive
+    set_ok = mvn_array_set(array, 1, mvn_val_string("dynamic"));
+    TEST_ASSERT(set_ok, "Set dynamic over primitive failed");
+    val = mvn_array_get(array, 1);
+    TEST_ASSERT(val != NULL && val->type == MVN_VAL_STRING && val->str != NULL &&
+                    strcmp(val->str->data, "dynamic") == 0,
+                "Value mismatch after setting dynamic over primitive");
+    TEST_ASSERT(array->count == 2, "Count should remain 2");
+
+    mvn_array_free(array);
+    return true; // Test passed
+}
+
 // --- Test Runner ---
 
 /**
@@ -286,6 +356,9 @@ int run_array_tests(int *passed_tests, int *failed_tests, int *total_tests)
     RUN_TEST(test_array_resize);
     RUN_TEST(test_array_ownership_free);
     RUN_TEST(test_array_ownership_set);
+    RUN_TEST(test_array_free_null);
+    RUN_TEST(test_array_resize_from_zero);
+    RUN_TEST(test_array_set_primitive_replacement);
 
     int tests_run = (*passed_tests - passed_before) + (*failed_tests - failed_before);
     (*total_tests) += tests_run;
