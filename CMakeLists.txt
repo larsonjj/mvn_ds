@@ -23,12 +23,14 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # Define library sources
 set(MVN_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/source/mvn_ds.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/source/mvn_ds_string.c # Add the new source file
     # Add other source files here as they are created
 )
 
 # Define library headers
 set(MVN_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/include/mvn_ds/mvn_ds.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/mvn_ds/mvn_ds_string.h # Add the new header file
     # Add other header files here as they are created
 )
 

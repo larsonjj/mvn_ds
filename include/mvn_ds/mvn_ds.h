@@ -7,13 +7,16 @@
 #include <stdlib.h>
 #include <string.h>
 
+// Include the extracted string header
+#include "mvn_ds_string.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
 
 // --- Forward Declarations ---
-typedef struct mvn_val_t        mvn_val_t;
-typedef struct mvn_string_t     mvn_string_t;
+typedef struct mvn_val_t mvn_val_t;
+// typedef struct mvn_string_t     mvn_string_t; // Now defined in mvn_ds_string.h
 typedef struct mvn_array_t      mvn_array_t;
 typedef struct mvn_hmap_t       mvn_hmap_t;
 typedef struct mvn_hmap_entry_t mvn_hmap_entry_t;
@@ -35,14 +38,7 @@ typedef enum {
 } mvn_val_type_t;
 
 // --- Dynamic String ---
-/**
- * @brief Structure representing a dynamic, null-terminated string.
- */
-struct mvn_string_t {
-    size_t length;   /**< Current length of the string (excluding null terminator). */
-    size_t capacity; /**< Allocated capacity of the character buffer. */
-    char  *data;     /**< Pointer to the null-terminated character buffer. */
-};
+// struct mvn_string_t is now defined in mvn_ds_string.h
 
 // --- Dynamic Array ---
 /**
@@ -126,14 +122,6 @@ void mvn_val_free(mvn_val_t *value);
  * @param value Pointer to the value to print.
  */
 void mvn_val_print(const mvn_val_t *value);
-
-// --- String Operations ---
-mvn_string_t *mvn_string_new(const char *chars);
-mvn_string_t *mvn_string_new_with_capacity(size_t capacity);
-void          mvn_string_free(mvn_string_t *string);
-bool          mvn_string_append_cstr(mvn_string_t *string, const char *chars);
-bool          mvn_string_equal(const mvn_string_t *s1, const mvn_string_t *s2);
-uint32_t      mvn_string_hash(const mvn_string_t *string); // Hash function
 
 // --- Array Operations ---
 mvn_array_t *mvn_array_new(void);
