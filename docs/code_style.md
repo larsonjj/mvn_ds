@@ -6,7 +6,7 @@
 - Add Copyright section. Use `Copyright (c) {year} Jake Larson` for copyright notice
 - Declare all local variables of the same type on a separate line
 - Always prefer SDL equivalent of stdlib functions
-- Prefer using MVN_MALLOC, MVN_CALLOC, MVN_REALLOC, and MVN_FREE for memory managment as they are aliases for SDL memory management functions
+- Prefer using MVN_DS_MALLOC, MVN_DS_CALLOC, MVN_DS_REALLOC, and MVN_DS_FREE for memory managment as they are aliases for SDL memory management functions
 - Prefer using mvn_list_t to pointer arrays
 - Prefer mvn_string_t to char *
 - Prefer mvn_hashmap_t for data structures where they provide improved flexibility and performance

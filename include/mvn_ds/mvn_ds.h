@@ -3,11 +3,11 @@
 
 #include <stdbool.h> // For bool type
 #include <stdint.h>  // For int32_t, int64_t etc.
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <stdio.h>   // For FILE*, printf (used in mvn_val_print)
+#include <stdlib.h>  // For size_t, NULL (needed by users potentially)
 
-// Include the extracted string header
+// Include the extracted component headers
+#include "mvn_ds_array.h" // Add this include
 #include "mvn_ds_string.h"
 
 #ifdef __cplusplus
@@ -17,7 +17,7 @@ extern "C" {
 // --- Forward Declarations ---
 typedef struct mvn_val_t mvn_val_t;
 // typedef struct mvn_string_t     mvn_string_t; // Now defined in mvn_ds_string.h
-typedef struct mvn_array_t      mvn_array_t;
+// typedef struct mvn_array_t      mvn_array_t; // Now defined in mvn_ds_array.h
 typedef struct mvn_hmap_t       mvn_hmap_t;
 typedef struct mvn_hmap_entry_t mvn_hmap_entry_t;
 
@@ -41,14 +41,7 @@ typedef enum {
 // struct mvn_string_t is now defined in mvn_ds_string.h
 
 // --- Dynamic Array ---
-/**
- * @brief Structure representing a dynamic array of mvn_val_t values.
- */
-struct mvn_array_t {
-    size_t     count;    /**< Number of elements currently in the array. */
-    size_t     capacity; /**< Allocated capacity of the value buffer. */
-    mvn_val_t *data;     /**< Pointer to the buffer holding mvn_val_t elements. */
-};
+// struct mvn_array_t is now defined in mvn_ds_array.h
 
 // --- Generic Value ---
 /**
@@ -66,7 +59,7 @@ struct mvn_val_t {
         mvn_string_t *str;  /**< Pointer to owned string if type is MVN_VAL_STRING. */
         mvn_array_t  *arr;  /**< Pointer to owned array if type is MVN_VAL_ARRAY. */
         mvn_hmap_t   *hmap; /**< Pointer to owned hash map if type is MVN_VAL_HASHMAP. */
-    };
+    }; // Removed trailing semicolon here, it's part of the struct definition
 };
 
 // --- Hash Map Entry ---
@@ -113,40 +106,15 @@ mvn_val_t mvn_val_hmap_take(mvn_hmap_t *hmap);    // Takes ownership of an exist
  * If the value type is STRING, ARRAY, or HASHMAP, it frees the associated
  * dynamic structure recursively. For other types, it does nothing.
  * Resets the value to MVN_VAL_NULL after freeing.
- * @param value Pointer to the value to free.
+ * @param value Pointer to the value to free. Does nothing if NULL.
  */
 void mvn_val_free(mvn_val_t *value);
 
 /**
  * @brief Prints a representation of the value to stdout (for debugging).
- * @param value Pointer to the value to print.
+ * @param value Pointer to the value to print. Handles NULL gracefully.
  */
 void mvn_val_print(const mvn_val_t *value);
-
-// --- Array Operations ---
-mvn_array_t *mvn_array_new(void);
-mvn_array_t *mvn_array_new_with_capacity(size_t capacity);
-void         mvn_array_free(mvn_array_t *array);
-/**
- * @brief Appends a value to the end of the array.
- * The array takes ownership of the value if it's a dynamic type (STRING, ARRAY,
- * HASHMAP).
- * @param array The array to append to.
- * @param value The value to append.
- * @return true if successful, false on allocation failure.
- */
-bool       mvn_array_push(mvn_array_t *array, mvn_val_t value);
-mvn_val_t *mvn_array_get(const mvn_array_t *array, size_t index);
-/**
- * @brief Sets the value at a specific index in the array.
- * Frees the existing value at the index before setting the new one.
- * The array takes ownership of the new value if it's a dynamic type.
- * @param array The array to modify.
- * @param index The index to set.
- * @param value The new value.
- * @return true if successful (index was valid), false otherwise.
- */
-bool mvn_array_set(mvn_array_t *array, size_t index, mvn_val_t value);
 
 // --- Hash Map Operations ---
 mvn_hmap_t *mvn_hmap_new(void);
@@ -157,10 +125,10 @@ void        mvn_hmap_free(mvn_hmap_t *hmap);
  * Takes ownership of the key string and the value's dynamic data.
  * Frees the existing value if the key already exists. Frees the *provided* key
  * if the key already exists (as the existing key is kept).
- * @param hmap The hash map.
- * @param key The key (ownership is taken).
+ * @param hmap The hash map. Must not be NULL.
+ * @param key The key (ownership is taken). Must not be NULL.
  * @param value The value (ownership is taken if dynamic).
- * @return true if successful, false on allocation failure.
+ * @return true if successful, false on allocation failure or invalid input.
  */
 bool mvn_hmap_set(mvn_hmap_t *hmap, mvn_string_t *key, mvn_val_t value);
 /**
@@ -168,10 +136,10 @@ bool mvn_hmap_set(mvn_hmap_t *hmap, mvn_string_t *key, mvn_val_t value);
  * Creates a new mvn_string_t for the key internally and takes ownership.
  * Takes ownership of the value's dynamic data.
  * Frees the existing value if the key already exists.
- * @param hmap The hash map.
- * @param key_cstr The C string key.
+ * @param hmap The hash map. Must not be NULL.
+ * @param key_cstr The C string key. Must not be NULL.
  * @param value The value (ownership is taken if dynamic).
- * @return true if successful, false on allocation failure.
+ * @return true if successful, false on allocation failure or invalid input.
  */
 bool       mvn_hmap_set_cstr(mvn_hmap_t *hmap, const char *key_cstr, mvn_val_t value);
 mvn_val_t *mvn_hmap_get(const mvn_hmap_t *hmap, const mvn_string_t *key);

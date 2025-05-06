@@ -3,6 +3,8 @@
  */
 #include "mvn_ds/mvn_ds_string.h"
 
+#include "mvn_ds/mvn_ds_utils.h" // Provides mvn_reallocate
+
 #include <assert.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -14,42 +16,7 @@
 #define MVN_INITIAL_CAPACITY 8
 #define MVN_GROWTH_FACTOR    2
 
-// --- Memory Allocation Aliases ---
-// NOTE: Using stdlib directly here. Replace with SDL_* if required globally.
-#define MVN_MALLOC  malloc
-#define MVN_CALLOC  calloc
-#define MVN_REALLOC realloc
-#define MVN_FREE    free
-
 // --- Internal Helper Functions ---
-
-/**
- * @internal
- * @brief Reallocates memory, handling potential errors.
- * Exits on failure for simplicity in this example. Robust applications
- * should handle this more gracefully. Uses MVN_REALLOC and MVN_FREE.
- * @param pointer Existing pointer (or NULL).
- * @param old_size Current allocated size (ignored by standard realloc but
- * useful for custom allocators).
- * @param new_size Desired new size. If 0, frees the pointer.
- * @return Pointer to the reallocated memory, or NULL if new_size is 0 or allocation fails.
- */
-static void *mvn_reallocate(void *pointer, size_t old_size, size_t new_size)
-{
-    (void)old_size; // Unused in this basic implementation
-    if (new_size == 0) {
-        MVN_FREE(pointer);
-        return NULL;
-    }
-    void *result = MVN_REALLOC(pointer, new_size);
-    if (result == NULL && new_size > 0) { // Check if allocation actually failed
-        fprintf(stderr, "[MVN_DS_STRING] Memory allocation failed!\n");
-        // In a real library, you might return NULL and let the caller handle it.
-        // For now, mimic previous behavior but return NULL
-        // exit(EXIT_FAILURE);
-    }
-    return result;
-}
 
 /**
  * @internal
@@ -100,7 +67,8 @@ static bool mvn_string_ensure_capacity(mvn_string_t *string, size_t additional_l
     }
     size_t allocation_size = new_capacity + 1;
 
-    char *new_data = (char *)mvn_reallocate(string->data, old_capacity + 1, allocation_size);
+    char *new_data = (char *)mvn_reallocate(
+        string->data, old_capacity + 1, allocation_size); // This now calls the header version
     if (!new_data) {
         return false; // Reallocation failed
     }
@@ -114,7 +82,7 @@ static bool mvn_string_ensure_capacity(mvn_string_t *string, size_t additional_l
 
 mvn_string_t *mvn_string_new_with_capacity(size_t capacity)
 {
-    mvn_string_t *string = (mvn_string_t *)MVN_MALLOC(sizeof(mvn_string_t));
+    mvn_string_t *string = (mvn_string_t *)MVN_DS_MALLOC(sizeof(mvn_string_t));
     if (!string) {
         return NULL;
     }
@@ -123,12 +91,12 @@ mvn_string_t *mvn_string_new_with_capacity(size_t capacity)
     string->capacity = capacity;
     // +1 for null terminator
     if (SIZE_MAX - 1 < capacity) { // Check overflow before adding 1
-        MVN_FREE(string);
+        MVN_DS_FREE(string);
         return NULL;
     }
-    string->data = (char *)MVN_MALLOC(capacity + 1);
+    string->data = (char *)MVN_DS_MALLOC(capacity + 1);
     if (!string->data) {
-        MVN_FREE(string);
+        MVN_DS_FREE(string);
         return NULL;
     }
     string->data[0] = '\0'; // Ensure null termination for empty string
@@ -159,8 +127,8 @@ void mvn_string_free(mvn_string_t *string)
     if (!string) {
         return;
     }
-    MVN_FREE(string->data); // Free the character buffer
-    MVN_FREE(string);       // Free the struct itself
+    MVN_DS_FREE(string->data); // Free the character buffer
+    MVN_DS_FREE(string);       // Free the struct itself
 }
 
 bool mvn_string_append_cstr(mvn_string_t *string, const char *chars)

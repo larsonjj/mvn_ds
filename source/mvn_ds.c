@@ -1,7 +1,9 @@
 /*
  * Copyright (c) 2024 Jake Larson
  */
-#include "mvn_ds/mvn_ds.h" // This now includes mvn_ds_string.h
+#include "mvn_ds/mvn_ds.h" // Includes string and array headers now
+
+#include "mvn_ds/mvn_ds_utils.h"
 
 #include <assert.h>   // For basic assertions
 #include <inttypes.h> // For PRI macros like PRId64
@@ -10,201 +12,13 @@
 #include <stdint.h> // For int32_t, int64_t etc.
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h> // Still needed for memcpy, strlen etc. in array/map
+#include <string.h> // Still needed for memcpy, strlen etc. in map
 
 // --- Defines ---
-#define MVN_INITIAL_CAPACITY 8 // Used by array/map
-#define MVN_GROWTH_FACTOR    2 // Used by array/map
+// Keep defines used by HMAP here, or move all to a shared internal header
+#define MVN_INITIAL_CAPACITY 8 // Used by map
+#define MVN_GROWTH_FACTOR    2 // Used by map
 #define MVN_MAP_LOAD_FACTOR  0.75
-
-// --- Memory Allocation Aliases ---
-// NOTE: Using stdlib directly here. Replace with SDL_* if required globally.
-#define MVN_MALLOC  malloc
-#define MVN_CALLOC  calloc
-#define MVN_REALLOC realloc
-#define MVN_FREE    free
-
-// --- Internal Helper Functions ---
-
-/**
- * @internal
- * @brief Reallocates memory, handling potential errors.
- * Exits on failure for simplicity in this example. Robust applications
- * should handle this more gracefully. Uses MVN_REALLOC and MVN_FREE.
- * @param pointer Existing pointer (or NULL).
- * @param old_size Current allocated size (ignored by standard realloc but
- * useful for custom allocators).
- * @param new_size Desired new size. If 0, frees the pointer.
- * @return Pointer to the reallocated memory, or NULL if new_size is 0 or allocation fails.
- */
-static void *mvn_reallocate(void *pointer, size_t old_size, size_t new_size)
-{
-    (void)old_size; // Unused in this basic implementation
-    if (new_size == 0) {
-        MVN_FREE(pointer);
-        return NULL;
-    }
-    void *result = MVN_REALLOC(pointer, new_size);
-    if (result == NULL && new_size > 0) { // Check if allocation actually failed
-        fprintf(stderr, "[MVN_DS] Memory allocation failed!\n");
-        // In a real library, you might return NULL and let the caller handle it.
-        // For now, mimic previous behavior but return NULL
-        // exit(EXIT_FAILURE);
-    }
-    return result;
-}
-
-// --- Array Implementation ---
-
-/**
- * @internal
- * @brief Ensures array has enough capacity, reallocating if necessary.
- * @param array The array to check/grow.
- * @return true if successful (or no resize needed), false on allocation
- * failure.
- */
-static bool mvn_array_ensure_capacity(mvn_array_t *array)
-{
-    assert(array != NULL);
-    if (array->count < array->capacity) {
-        return true; // Enough space
-    }
-    size_t old_capacity = array->capacity;
-    size_t new_capacity = old_capacity < MVN_INITIAL_CAPACITY ? MVN_INITIAL_CAPACITY :
-                                                                old_capacity * MVN_GROWTH_FACTOR;
-
-    // Check for potential overflow during growth calculation
-    if (new_capacity < old_capacity && old_capacity > 0) { // Check if overflow occurred
-        fprintf(stderr, "[MVN_DS] Array capacity overflow during resize calculation.\n");
-        // Try setting to count + 1 as a last resort if possible
-        if (SIZE_MAX - 1 < array->count) {
-            return false; // Cannot even add one more element
-        }
-        new_capacity = array->count + 1;
-        if (new_capacity <= old_capacity) { // Still not enough or wrapped around
-            return false;
-        }
-    } else if (new_capacity == 0 && old_capacity == 0) { // Handle initial allocation case
-        new_capacity = MVN_INITIAL_CAPACITY;
-    }
-
-    // Check for overflow before calculating allocation size
-    if (SIZE_MAX / sizeof(mvn_val_t) < new_capacity) {
-        fprintf(stderr, "[MVN_DS] Array capacity overflow calculating allocation size.\n");
-        return false;
-    }
-    size_t allocation_size = new_capacity * sizeof(mvn_val_t);
-
-    mvn_val_t *new_data =
-        (mvn_val_t *)mvn_reallocate(array->data, old_capacity * sizeof(mvn_val_t), allocation_size);
-    if (!new_data) {
-        return false;
-    }
-
-    array->data     = new_data;
-    array->capacity = new_capacity;
-
-    // Initialize new slots to NULL to prevent freeing uninitialized memory later
-    for (size_t index = old_capacity; index < new_capacity; ++index) {
-        array->data[index] = mvn_val_null();
-    }
-    return true;
-}
-
-mvn_array_t *mvn_array_new_with_capacity(size_t capacity)
-{
-    mvn_array_t *array = (mvn_array_t *)MVN_MALLOC(sizeof(mvn_array_t));
-    if (!array) {
-        return NULL;
-    }
-
-    array->count    = 0;
-    array->capacity = capacity;
-    if (capacity > 0) {
-        // Check for overflow before calculating allocation size
-        if (SIZE_MAX / sizeof(mvn_val_t) < capacity) {
-            MVN_FREE(array);
-            return NULL;
-        }
-        array->data = (mvn_val_t *)MVN_MALLOC(capacity * sizeof(mvn_val_t));
-        if (!array->data) {
-            MVN_FREE(array);
-            return NULL;
-        }
-        // Initialize to NULL
-        for (size_t index = 0; index < capacity; ++index) {
-            array->data[index] = mvn_val_null();
-        }
-    } else {
-        array->data = NULL; // No initial allocation if capacity is 0
-    }
-    return array;
-}
-
-mvn_array_t *mvn_array_new(void)
-{
-    // Use 0 capacity initially, let first push allocate MVN_INITIAL_CAPACITY
-    return mvn_array_new_with_capacity(0);
-}
-
-void mvn_array_free(mvn_array_t *array)
-{
-    if (!array) {
-        return;
-    }
-    // Free contained values first
-    // Use capacity because ensure_capacity initializes up to capacity
-    for (size_t index = 0; index < array->capacity; index++) {
-        if (array->data) { // Check if data was ever allocated
-            mvn_val_free(&array->data[index]);
-        }
-    }
-    MVN_FREE(array->data); // Free the value buffer
-    MVN_FREE(array);       // Free the struct itself
-}
-
-bool mvn_array_push(mvn_array_t *array, mvn_val_t value)
-{
-    if (!array) {
-        // Cannot push to NULL array, free incoming value if needed
-        mvn_val_free(&value);
-        return false;
-    }
-    if (!mvn_array_ensure_capacity(array)) {
-        // If resize failed, we might own the value now but can't store it.
-        // Free it to prevent leaks.
-        mvn_val_free(&value);
-        return false;
-    }
-    // Place the value (transfers ownership)
-    array->data[array->count++] = value;
-    return true;
-}
-
-mvn_val_t *mvn_array_get(const mvn_array_t *array, size_t index)
-{
-    if (!array || index >= array->count) {
-        return NULL;
-    }
-    // Const cast is safe here if the user respects the const-ness of the return
-    // when calling via a const array*. If they have a non-const array*, they get
-    // a non-const value* back.
-    return &((mvn_array_t *)array)->data[index];
-}
-
-bool mvn_array_set(mvn_array_t *array, size_t index, mvn_val_t value)
-{
-    if (!array || index >= array->count) {
-        // Index out of bounds. Free the incoming value as it won't be stored.
-        mvn_val_free(&value);
-        return false;
-    }
-    // Free the old value at the index before overwriting
-    mvn_val_free(&array->data[index]);
-    // Assign the new value (transfers ownership)
-    array->data[index] = value;
-    return true;
-}
 
 // --- Hash Map Implementation ---
 
@@ -253,18 +67,21 @@ static bool mvn_hmap_adjust_capacity(mvn_hmap_t *hmap, size_t new_capacity)
     assert(new_capacity > 0); // Should not be called with 0
 
     // Allocate new bucket array, initialized to NULL
-    mvn_hmap_entry_t **new_buckets =
-        (mvn_hmap_entry_t **)MVN_CALLOC(new_capacity, sizeof(mvn_hmap_entry_t *));
+    // Check for overflow before calculating allocation size
+    if (new_capacity > SIZE_MAX / sizeof(mvn_hmap_entry_t *)) {
+        fprintf(stderr, "[MVN_DS] Hash map capacity overflow calculating allocation size.\n");
+        return false;
+    }
+    size_t             allocation_size = new_capacity * sizeof(mvn_hmap_entry_t *);
+    mvn_hmap_entry_t **new_buckets     = (mvn_hmap_entry_t **)MVN_DS_CALLOC(
+        1, allocation_size); // Use CALLOC for zero-initialization
     if (!new_buckets) {
         // Allocation failed, keep the old table. This is problematic.
-        // A real implementation might try other strategies or report error.
         fprintf(stderr, "[MVN_DS] Hash map resize failed - out of memory.\n");
-        // Keep old table, performance will degrade.
         return false; // Indicate failure
     }
 
     // Rehash all existing entries into the new buckets
-    // hmap->count = 0; // Don't reset count, just move entries
     for (size_t index_old = 0; index_old < hmap->capacity; index_old++) {
         mvn_hmap_entry_t *entry = hmap->buckets ? hmap->buckets[index_old] : NULL;
         while (entry != NULL) {
@@ -281,11 +98,10 @@ static bool mvn_hmap_adjust_capacity(mvn_hmap_t *hmap, size_t new_capacity)
                 new_buckets[index_new] = entry;
             } else {
                 // This case should ideally not happen if keys are always valid
-                // If it does, we lose this entry during resize. Log an error?
                 fprintf(stderr, "[MVN_DS] Warning: NULL key found during hash map resize.\n");
                 // Free the problematic entry to avoid leaks?
                 mvn_val_free(&entry->value);
-                MVN_FREE(entry);
+                MVN_DS_FREE(entry);
                 hmap->count--; // Decrement count as we lost an entry
             }
 
@@ -293,7 +109,7 @@ static bool mvn_hmap_adjust_capacity(mvn_hmap_t *hmap, size_t new_capacity)
         }
     }
 
-    MVN_FREE(hmap->buckets); // Free the old bucket array
+    MVN_DS_FREE(hmap->buckets); // Free the old bucket array
     hmap->buckets  = new_buckets;
     hmap->capacity = new_capacity;
     return true; // Indicate success
@@ -301,7 +117,7 @@ static bool mvn_hmap_adjust_capacity(mvn_hmap_t *hmap, size_t new_capacity)
 
 mvn_hmap_t *mvn_hmap_new_with_capacity(size_t capacity)
 {
-    mvn_hmap_t *hmap = (mvn_hmap_t *)MVN_MALLOC(sizeof(mvn_hmap_t));
+    mvn_hmap_t *hmap = (mvn_hmap_t *)MVN_DS_MALLOC(sizeof(mvn_hmap_t));
     if (!hmap) {
         return NULL;
     }
@@ -313,13 +129,15 @@ mvn_hmap_t *mvn_hmap_new_with_capacity(size_t capacity)
     if (hmap->capacity > 0) {
         // Use calloc to initialize bucket pointers to NULL
         // Check for overflow before calculating allocation size
-        if (SIZE_MAX / sizeof(mvn_hmap_entry_t *) < hmap->capacity) {
-            MVN_FREE(hmap);
+        if (hmap->capacity > SIZE_MAX / sizeof(mvn_hmap_entry_t *)) {
+            MVN_DS_FREE(hmap);
+            fprintf(stderr, "[MVN_DS] Hash map initial capacity overflow.\n");
             return NULL;
         }
-        hmap->buckets = (mvn_hmap_entry_t **)MVN_CALLOC(hmap->capacity, sizeof(mvn_hmap_entry_t *));
+        size_t allocation_size = hmap->capacity * sizeof(mvn_hmap_entry_t *);
+        hmap->buckets = (mvn_hmap_entry_t **)MVN_DS_CALLOC(1, allocation_size); // Use CALLOC
         if (!hmap->buckets) {
-            MVN_FREE(hmap);
+            MVN_DS_FREE(hmap);
             return NULL;
         }
     } else {
@@ -345,12 +163,12 @@ void mvn_hmap_free(mvn_hmap_t *hmap)
             mvn_hmap_entry_t *next = entry->next; // Store next pointer
             mvn_string_free(entry->key);          // Free the key string
             mvn_val_free(&entry->value);          // Free the value (recursively)
-            MVN_FREE(entry);                      // Free the entry struct
+            MVN_DS_FREE(entry);                   // Free the entry struct
             entry = next;                         // Move to the next entry
         }
     }
-    MVN_FREE(hmap->buckets); // Free the bucket array
-    MVN_FREE(hmap);          // Free the map struct
+    MVN_DS_FREE(hmap->buckets); // Free the bucket array
+    MVN_DS_FREE(hmap);          // Free the map struct
 }
 
 bool mvn_hmap_set(mvn_hmap_t *hmap, mvn_string_t *key, mvn_val_t value)
@@ -370,9 +188,10 @@ bool mvn_hmap_set(mvn_hmap_t *hmap, mvn_string_t *key, mvn_val_t value)
             return false; // Failed to allocate initial buckets
         }
     }
-    // Resize if load factor exceeds threshold
+    // Resize if load factor *would* exceed threshold after adding the new element
     // Check capacity > 0 before division
-    else if (hmap->count + 1 > hmap->capacity * MVN_MAP_LOAD_FACTOR) {
+    else if (hmap->capacity > 0 &&
+             (double)(hmap->count + 1) / hmap->capacity >= MVN_MAP_LOAD_FACTOR) {
         size_t new_capacity = hmap->capacity * MVN_GROWTH_FACTOR;
         // Check for potential overflow during growth calculation
         if (new_capacity < hmap->capacity) {
@@ -412,7 +231,7 @@ bool mvn_hmap_set(mvn_hmap_t *hmap, mvn_string_t *key, mvn_val_t value)
     }
 
     // Key not found - create new entry
-    mvn_hmap_entry_t *new_entry = (mvn_hmap_entry_t *)MVN_MALLOC(sizeof(mvn_hmap_entry_t));
+    mvn_hmap_entry_t *new_entry = (mvn_hmap_entry_t *)MVN_DS_MALLOC(sizeof(mvn_hmap_entry_t));
     if (!new_entry) {
         // Allocation failed - free the key and value we were given
         mvn_string_free(key);
@@ -469,6 +288,7 @@ mvn_val_t *mvn_hmap_get_cstr(const mvn_hmap_t *hmap, const char *key_cstr)
     }
     // Create a temporary string wrapper for searching, without allocating new
     // memory for the chars.
+    // Cast discards const, but hash/equal won't modify.
     mvn_string_t temp_key   = {.length = strlen(key_cstr), .capacity = 0, .data = (char *)key_cstr};
     uint32_t     hash_value = mvn_string_hash(&temp_key);
 
@@ -501,7 +321,7 @@ bool mvn_hmap_delete(mvn_hmap_t *hmap, const mvn_string_t *key)
             // Free the deleted entry's contents and the entry itself
             mvn_string_free(entry->key);
             mvn_val_free(&entry->value);
-            MVN_FREE(entry);
+            MVN_DS_FREE(entry);
             hmap->count--;
             return true; // Successfully deleted
         }
@@ -519,6 +339,7 @@ bool mvn_hmap_delete_cstr(mvn_hmap_t *hmap, const char *key_cstr)
         return false;
     }
     // Use the temporary string trick again for lookup
+    // Cast discards const, but delete won't modify.
     mvn_string_t temp_key = {.length = strlen(key_cstr), .capacity = 0, .data = (char *)key_cstr};
     // Call the actual delete function
     return mvn_hmap_delete(hmap, &temp_key);
