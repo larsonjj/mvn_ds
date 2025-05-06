@@ -80,32 +80,40 @@ static bool mvn_str_ensure_capacity(mvn_str_t *string_ptr, size_t additional_len
  * The allocated buffer will be capacity + 1 bytes for the null terminator.
  * The initial string content is empty ("").
  * @param capacity The initial capacity (excluding null terminator).
- * @return A pointer to the new mvn_str_t, or NULL on allocation failure or overflow.
+ * @return A pointer to the new mvn_str_t, or NULL on allocation failure or if capacity is too
+ * large.
  */
-mvn_str_t *mvn_str_new_with_capacity(size_t capacity)
+mvn_str_t *mvn_str_new_capacity(size_t capacity)
 {
+    /* Copyright (c) 2024 Jake Larson */
+    // Prevent capacity + 1 from overflowing or becoming SIZE_MAX.
+    // If capacity is SIZE_MAX, capacity + 1 wraps to 0.
+    // If capacity is SIZE_MAX - 1, capacity + 1 is SIZE_MAX.
+    // Both are problematic: malloc(0) is implementation-defined, malloc(SIZE_MAX) is flagged by
+    // Valgrind.
+    if (capacity >= SIZE_MAX - 1) { // Check if capacity is SIZE_MAX or SIZE_MAX - 1
+        fprintf(stderr,
+                "[MVN_DS_STR] Requested capacity %zu is too large or would result in problematic "
+                "allocation size.\n",
+                capacity);
+        return NULL;
+    }
+
     mvn_str_t *string_ptr = (mvn_str_t *)MVN_DS_MALLOC(sizeof(mvn_str_t));
     if (!string_ptr) {
-        return NULL;
+        return NULL; // Malloc failure for the struct itself
+    }
+
+    size_t allocation_size = capacity + 1;                           // For null terminator
+    string_ptr->data       = (char *)MVN_DS_MALLOC(allocation_size); // This is line 103 from error
+    if (!string_ptr->data) {
+        MVN_DS_FREE(string_ptr);
+        return NULL; // Malloc failure for the data buffer
     }
 
     string_ptr->length   = 0;
     string_ptr->capacity = capacity;
-
-    // Check for overflow before adding 1 for null terminator
-    if (capacity == SIZE_MAX) {
-        MVN_DS_FREE(string_ptr);
-        fprintf(stderr, "[MVN_DS_STR] Initial capacity reached SIZE_MAX.\n");
-        return NULL;
-    }
-    size_t allocation_size = capacity + 1; // +1 for null terminator
-
-    string_ptr->data = (char *)MVN_DS_MALLOC(allocation_size);
-    if (!string_ptr->data) {
-        MVN_DS_FREE(string_ptr);
-        return NULL;
-    }
-    string_ptr->data[0] = '\0'; // Ensure it's always null-terminated
+    string_ptr->data[0]  = '\0'; // Null-terminate the empty string
 
     return string_ptr;
 }
@@ -125,7 +133,7 @@ mvn_str_t *mvn_str_new(const char *chars)
                                   initial_length :
                                   MVN_DS_STR_INITIAL_CAPACITY;
 
-    mvn_str_t *string_ptr = mvn_str_new_with_capacity(initial_capacity);
+    mvn_str_t *string_ptr = mvn_str_new_capacity(initial_capacity);
     if (!string_ptr) {
         return NULL;
     }
@@ -135,7 +143,7 @@ mvn_str_t *mvn_str_new(const char *chars)
         string_ptr->data[initial_length] = '\0'; // Ensure null termination
         string_ptr->length               = initial_length;
     }
-    // Capacity is already set by mvn_str_new_with_capacity
+    // Capacity is already set by mvn_str_new_capacity
 
     return string_ptr;
 }

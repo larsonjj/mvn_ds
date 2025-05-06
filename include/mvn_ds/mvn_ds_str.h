@@ -25,7 +25,7 @@ extern "C" {
 mvn_str_t *mvn_str_new(const char *chars);
 
 // Creates a new string with a specific initial capacity.
-mvn_str_t *mvn_str_new_with_capacity(size_t capacity);
+mvn_str_t *mvn_str_new_capacity(size_t capacity);
 
 // Frees the memory associated with a string.
 void mvn_str_free(mvn_str_t *string_ptr);

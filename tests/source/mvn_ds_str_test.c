@@ -35,8 +35,8 @@ static bool test_string_creation_and_destruction(void)
     TEST_ASSERT(str_two->data[0] == '\0', "Empty string not null-terminated");
     mvn_str_free(str_two);
 
-    // Test mvn_str_new_with_capacity
-    mvn_str_t *str_three = mvn_str_new_with_capacity(20);
+    // Test mvn_str_new_capacity
+    mvn_str_t *str_three = mvn_str_new_capacity(20);
     TEST_ASSERT(str_three != NULL, "Failed to create string with capacity");
     TEST_ASSERT(str_three->length == 0, "New string (cap) length should be 0");
     TEST_ASSERT(str_three->capacity == 20, "New string (cap) capacity mismatch");
@@ -52,7 +52,7 @@ static bool test_string_creation_and_destruction(void)
 
 static bool test_string_zero_capacity_creation(void)
 {
-    mvn_str_t *str_zero = mvn_str_new_with_capacity(0);
+    mvn_str_t *str_zero = mvn_str_new_capacity(0);
     TEST_ASSERT(str_zero != NULL, "Failed to create string with zero capacity");
     TEST_ASSERT(str_zero->length == 0, "Zero capacity string length should be 0");
     TEST_ASSERT(str_zero->capacity == 0, "Zero capacity string capacity should be 0");
@@ -251,7 +251,7 @@ static bool test_string_equal_cstr(void)
 static bool test_string_resize(void)
 {
     // Start with small capacity
-    mvn_str_t *str_resize = mvn_str_new_with_capacity(4);
+    mvn_str_t *str_resize = mvn_str_new_capacity(4);
     TEST_ASSERT(str_resize != NULL, "Failed to create string for resize test");
     TEST_ASSERT(str_resize->capacity == 4, "Initial capacity mismatch");
 
@@ -358,46 +358,23 @@ static bool test_string_val_take_null(void)
 }
 
 /**
- * @brief Tests mvn_str_new_with_capacity with extremely large capacity values.
+ * @brief Tests mvn_str_new_capacity with extremely large capacity values.
  */
 static bool test_string_new_capacity_overflow(void)
 {
     /* Copyright (c) 2024 Jake Larson */
     mvn_str_t *str_overflow = NULL;
 
-    // If capacity is SIZE_MAX, capacity + 1 (for null terminator) will overflow size_t.
-    // The function should detect this (e.g., capacity >= SIZE_MAX) and return NULL.
-    str_overflow = mvn_str_new_with_capacity(SIZE_MAX);
-    TEST_ASSERT(
-        str_overflow == NULL,
-        "mvn_str_new_with_capacity(SIZE_MAX) should return NULL due to capacity + 1 overflow");
+    // Test with SIZE_MAX: should return NULL due to the check (capacity >= SIZE_MAX - 1)
+    str_overflow = mvn_str_new_capacity(SIZE_MAX);
+    TEST_ASSERT(str_overflow == NULL,
+                "mvn_str_new_capacity(SIZE_MAX) should return NULL due to capacity check");
 
-    // Test with a capacity that is the largest possible before (capacity + 1) overflows.
-    // This is SIZE_MAX - 1. The allocation for data would be (SIZE_MAX - 1) + 1 = SIZE_MAX bytes.
-    // This allocation might still fail due to system memory limits,
-    // but it shouldn't be due to a size_t overflow in calculating allocation_size.
-    if (SIZE_MAX > 0) { // Ensure SIZE_MAX - 1 is a valid positive number
-        mvn_str_t *str_large_valid_capacity = mvn_str_new_with_capacity(SIZE_MAX - 1);
-        if (str_large_valid_capacity != NULL) {
-            // If this succeeds, it means an allocation of SIZE_MAX bytes was attempted and
-            // succeeded.
-            TEST_ASSERT(str_large_valid_capacity->capacity == SIZE_MAX - 1,
-                        "Capacity mismatch for mvn_str_new_with_capacity(SIZE_MAX - 1)");
-            TEST_ASSERT(str_large_valid_capacity->length == 0,
-                        "Length should be 0 for mvn_str_new_with_capacity(SIZE_MAX - 1)");
-            TEST_ASSERT(str_large_valid_capacity->data != NULL,
-                        "Data should not be NULL for mvn_str_new_with_capacity(SIZE_MAX - 1)");
-            TEST_ASSERT(
-                str_large_valid_capacity->data[0] == '\0',
-                "String should be null-terminated for mvn_str_new_with_capacity(SIZE_MAX - 1)");
-            mvn_str_free(str_large_valid_capacity);
-        } else {
-            // This is an acceptable outcome if the system cannot allocate SIZE_MAX bytes.
-            // The primary check is that it doesn't crash or misbehave due to overflow.
-            printf("Note: mvn_str_new_with_capacity(SIZE_MAX - 1) returned NULL (likely out of "
-                   "memory for %zu bytes).\n",
-                   SIZE_MAX);
-        }
+    // Test with SIZE_MAX - 1: should also return NULL due to the check (capacity >= SIZE_MAX - 1)
+    if (SIZE_MAX > 0) { // Ensure SIZE_MAX - 1 is a valid concept
+        str_overflow = mvn_str_new_capacity(SIZE_MAX - 1);
+        TEST_ASSERT(str_overflow == NULL,
+                    "mvn_str_new_capacity(SIZE_MAX - 1) should return NULL due to capacity check");
     }
     return true; // Test passed
 }
@@ -449,47 +426,4 @@ int main(void)
     print_test_summary(total, passed, failed);
 
     return (failed > 0) ? 1 : 0;
-}
-
-/**
- * @brief Creates a new string with a specific initial capacity.
- * The allocated buffer will be capacity + 1 bytes for the null terminator.
- * The initial string content is empty ("").
- * @param capacity The initial capacity (excluding null terminator).
- * @return A pointer to the new mvn_str_t, or NULL on allocation failure or if capacity is too
- * large.
- */
-mvn_str_t *mvn_str_new_with_capacity(size_t capacity)
-{
-    /* Copyright (c) 2024 Jake Larson */
-    // Prevent capacity + 1 from overflowing or becoming SIZE_MAX.
-    // If capacity is SIZE_MAX, capacity + 1 wraps to 0.
-    // If capacity is SIZE_MAX - 1, capacity + 1 is SIZE_MAX.
-    // Both are problematic: malloc(0) is implementation-defined, malloc(SIZE_MAX) is flagged by
-    // Valgrind.
-    if (capacity >= SIZE_MAX - 1) { // Check if capacity is SIZE_MAX or SIZE_MAX - 1
-        fprintf(stderr,
-                "[MVN_DS_STR] Requested capacity %zu is too large or would result in problematic "
-                "allocation size.\n",
-                capacity);
-        return NULL;
-    }
-
-    mvn_str_t *string_ptr = (mvn_str_t *)MVN_DS_MALLOC(sizeof(mvn_str_t));
-    if (!string_ptr) {
-        return NULL; // Malloc failure for the struct itself
-    }
-
-    size_t allocation_size = capacity + 1;                           // For null terminator
-    string_ptr->data       = (char *)MVN_DS_MALLOC(allocation_size); // This is line 103 from error
-    if (!string_ptr->data) {
-        MVN_DS_FREE(string_ptr);
-        return NULL; // Malloc failure for the data buffer
-    }
-
-    string_ptr->length   = 0;
-    string_ptr->capacity = capacity;
-    string_ptr->data[0]  = '\0'; // Null-terminate the empty string
-
-    return string_ptr;
 }
