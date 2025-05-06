@@ -203,10 +203,15 @@ void mvn_hmap_free(mvn_hmap_t *hmap)
  */
 bool mvn_hmap_set(mvn_hmap_t *hmap, mvn_string_t *key, mvn_val_t value)
 {
-    if (hmap == NULL || key == NULL) {
-        // Invalid input. Free potentially owned value and provided key.
-        mvn_val_free(&value);
-        mvn_string_free(key); // Safe even if key is NULL
+    if (hmap == NULL) {
+        mvn_val_free(&value); // Free the value as it won't be used or stored
+        return false;         // Key ownership remains with the caller
+    }
+
+    if (key == NULL) {
+        // Key is NULL, operation cannot proceed.
+        mvn_val_free(&value); // Free the value as it won't be used or stored
+        // If key is NULL, mvn_string_free(key) would be a no-op.
         return false;
     }
 

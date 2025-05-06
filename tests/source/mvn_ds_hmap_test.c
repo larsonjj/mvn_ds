@@ -7,6 +7,7 @@
 #include "mvn_ds_test_utils.h"
 
 #include <math.h>
+#include <stdbool.h> // For bool type
 #include <stdio.h>
 #include <string.h>
 
@@ -415,6 +416,86 @@ static bool test_hmap_empty_string_key(void)
     return true; // Test passed
 }
 
+/**
+ * @brief Tests hash map operations when the map pointer itself is NULL.
+ */
+static bool test_hmap_operations_on_null_map(void)
+{
+    mvn_string_t *temp_key_str = mvn_string_new("anyKey");
+    TEST_ASSERT(temp_key_str != NULL, "Failed to create temp_key_str for NULL map test");
+    mvn_val_t temp_value = mvn_val_i32(123);
+
+    // Test mvn_hmap_get with NULL map
+    mvn_val_t *got_val = mvn_hmap_get(NULL, temp_key_str);
+    TEST_ASSERT(got_val == NULL, "mvn_hmap_get(NULL, key) should return NULL");
+
+    // Test mvn_hmap_set with NULL map
+    bool set_flag = mvn_hmap_set(NULL, temp_key_str, temp_value); // temp_key_str won't be consumed
+    TEST_ASSERT(!set_flag, "mvn_hmap_set(NULL, key, val) should return false");
+
+    // Test mvn_hmap_delete with NULL map
+    bool delete_flag = mvn_hmap_delete(NULL, temp_key_str); // temp_key_str won't be consumed
+    TEST_ASSERT(!delete_flag, "mvn_hmap_delete(NULL, key) should return false");
+
+    // Test _cstr variants with NULL map
+    got_val = mvn_hmap_get_cstr(NULL, "anyKeyCstr");
+    TEST_ASSERT(got_val == NULL, "mvn_hmap_get_cstr(NULL, key_cstr) should return NULL");
+
+    set_flag = mvn_hmap_set_cstr(NULL, "anyKeyCstr", temp_value);
+    TEST_ASSERT(!set_flag, "mvn_hmap_set_cstr(NULL, key_cstr, val) should return false");
+
+    delete_flag = mvn_hmap_delete_cstr(NULL, "anyKeyCstr");
+    TEST_ASSERT(!delete_flag, "mvn_hmap_delete_cstr(NULL, key_cstr) should return false");
+
+    mvn_string_free(temp_key_str); // Clean up the temporary key
+    // temp_value is primitive, no explicit free needed for its content here
+
+    return true; // Test passed
+}
+
+/**
+ * @brief Tests hash map operations with NULL key parameters.
+ */
+static bool test_hmap_operations_with_null_key(void)
+{
+    mvn_hmap_t *hmap_ptr = mvn_hmap_new();
+    TEST_ASSERT(hmap_ptr != NULL, "Failed to create hmap_ptr for NULL key test");
+    mvn_val_t temp_value = mvn_val_i32(456);
+
+    // Test mvn_hmap_get with NULL key
+    mvn_val_t *got_val = mvn_hmap_get(hmap_ptr, NULL);
+    TEST_ASSERT(got_val == NULL, "mvn_hmap_get(map, NULL) should return NULL");
+
+    // Test mvn_hmap_set with NULL key (mvn_string_t*)
+    // This should fail as a NULL key cannot be processed.
+    bool set_flag = mvn_hmap_set(hmap_ptr, NULL, temp_value);
+    TEST_ASSERT(!set_flag, "mvn_hmap_set(map, NULL, val) should return false");
+    TEST_ASSERT(hmap_ptr->count == 0, "Map count should be 0 after failed set with NULL key");
+
+    // Test mvn_hmap_delete with NULL key (mvn_string_t*)
+    bool delete_flag = mvn_hmap_delete(hmap_ptr, NULL);
+    TEST_ASSERT(!delete_flag, "mvn_hmap_delete(map, NULL) should return false");
+    TEST_ASSERT(hmap_ptr->count == 0, "Map count should be 0 after failed delete with NULL key");
+
+    // Test _cstr variants with NULL key_cstr
+    got_val = mvn_hmap_get_cstr(hmap_ptr, NULL);
+    TEST_ASSERT(got_val == NULL, "mvn_hmap_get_cstr(map, NULL) should return NULL");
+
+    set_flag = mvn_hmap_set_cstr(hmap_ptr, NULL, temp_value);
+    TEST_ASSERT(!set_flag, "mvn_hmap_set_cstr(map, NULL, val) should return false");
+    TEST_ASSERT(hmap_ptr->count == 0, "Map count should be 0 after failed set_cstr with NULL key");
+
+    delete_flag = mvn_hmap_delete_cstr(hmap_ptr, NULL);
+    TEST_ASSERT(!delete_flag, "mvn_hmap_delete_cstr(map, NULL) should return false");
+    TEST_ASSERT(hmap_ptr->count == 0,
+                "Map count should be 0 after failed delete_cstr with NULL key");
+
+    mvn_hmap_free(hmap_ptr);
+    // temp_value is primitive, no explicit free needed for its content here
+
+    return true; // Test passed
+}
+
 // --- Test Runner ---
 
 /**
@@ -438,8 +519,10 @@ int run_hmap_tests(int *passed_tests, int *failed_tests, int *total_tests)
     RUN_TEST(test_hmap_ownership);
     RUN_TEST(test_hmap_collisions);
     RUN_TEST(test_hmap_mvn_string_keys);
-    RUN_TEST(test_hmap_free_null);        // Add new test run
-    RUN_TEST(test_hmap_empty_string_key); // Add new test run
+    RUN_TEST(test_hmap_free_null);                // Add new test run
+    RUN_TEST(test_hmap_empty_string_key);         // Add new test run
+    RUN_TEST(test_hmap_operations_on_null_map);   // Added
+    RUN_TEST(test_hmap_operations_with_null_key); // Added
 
     int tests_run = (*passed_tests - passed_before) + (*failed_tests - failed_before);
     (*total_tests) += tests_run;
