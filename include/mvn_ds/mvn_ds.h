@@ -36,19 +36,10 @@ mvn_val_t mvn_val_hmap(void);                     // Creates a new empty owned h
 mvn_val_t mvn_val_hmap_take(mvn_hmap_t *hmap);    // Takes ownership of an existing map
 
 // --- Value Operations ---
-/**
- * @brief Frees the resources owned by a mvn_val_t.
- * If the value type is STRING, ARRAY, or HASHMAP, it frees the associated
- * dynamic structure recursively. For other types, it does nothing.
- * Resets the value to MVN_VAL_NULL after freeing.
- * @param value Pointer to the value to free. Does nothing if NULL.
- */
+// Frees the resources owned by a mvn_val_t.
 void mvn_val_free(mvn_val_t *value);
 
-/**
- * @brief Prints a representation of the value to stdout (for debugging).
- * @param value Pointer to the value to print. Handles NULL gracefully.
- */
+// Prints a representation of the value to stdout (for debugging).
 void mvn_val_print(const mvn_val_t *value);
 
 // --- Component Operations ---

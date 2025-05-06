@@ -15,33 +15,72 @@
 #include <string.h> // For strlen (if any remain)
 
 // --- Value Implementation ---
-// Keep mvn_val_* constructors and mvn_val_free, mvn_val_print
 
+/**
+ * @brief Creates a NULL value.
+ * @return A mvn_val_t representing NULL.
+ */
 mvn_val_t mvn_val_null(void)
 {
     return (mvn_val_t){.type = MVN_VAL_NULL};
 }
+
+/**
+ * @brief Creates a boolean value.
+ * @param b The boolean value.
+ * @return A mvn_val_t representing the boolean.
+ */
 mvn_val_t mvn_val_bool(bool b)
 {
     return (mvn_val_t){.type = MVN_VAL_BOOL, .b = b};
 }
+
+/**
+ * @brief Creates a 32-bit integer value.
+ * @param i32 The integer value.
+ * @return A mvn_val_t representing the integer.
+ */
 mvn_val_t mvn_val_i32(int32_t i32)
 {
     return (mvn_val_t){.type = MVN_VAL_I32, .i32 = i32};
 }
+
+/**
+ * @brief Creates a 64-bit integer value.
+ * @param i64 The integer value.
+ * @return A mvn_val_t representing the integer.
+ */
 mvn_val_t mvn_val_i64(int64_t i64)
 {
     return (mvn_val_t){.type = MVN_VAL_I64, .i64 = i64};
 }
+
+/**
+ * @brief Creates a 32-bit float value.
+ * @param f32 The float value.
+ * @return A mvn_val_t representing the float.
+ */
 mvn_val_t mvn_val_f32(float f32)
 {
     return (mvn_val_t){.type = MVN_VAL_F32, .f32 = f32};
 }
+
+/**
+ * @brief Creates a 64-bit double value.
+ * @param f64 The double value.
+ * @return A mvn_val_t representing the double.
+ */
 mvn_val_t mvn_val_f64(double f64)
 {
     return (mvn_val_t){.type = MVN_VAL_F64, .f64 = f64};
 }
 
+/**
+ * @brief Creates a string value by copying a C string.
+ * Allocates a new mvn_string_t internally.
+ * @param chars The C string to copy. If NULL, creates an empty string value.
+ * @return A mvn_val_t representing the string, or MVN_VAL_NULL on allocation failure.
+ */
 mvn_val_t mvn_val_string(const char *chars)
 {
     mvn_string_t *str = mvn_string_new(chars);
@@ -51,6 +90,12 @@ mvn_val_t mvn_val_string(const char *chars)
     return (mvn_val_t){.type = MVN_VAL_STRING, .str = str};
 }
 
+/**
+ * @brief Creates a string value by taking ownership of an existing mvn_string_t.
+ * The provided string pointer will be managed by the mvn_val_t.
+ * @param str The mvn_string_t to take ownership of. If NULL, creates a NULL value.
+ * @return A mvn_val_t representing the string.
+ */
 mvn_val_t mvn_val_string_take(mvn_string_t *str)
 {
     if (!str) {
@@ -59,6 +104,11 @@ mvn_val_t mvn_val_string_take(mvn_string_t *str)
     return (mvn_val_t){.type = MVN_VAL_STRING, .str = str};
 }
 
+/**
+ * @brief Creates an empty array value.
+ * Allocates a new mvn_array_t internally.
+ * @return A mvn_val_t representing the array, or MVN_VAL_NULL on allocation failure.
+ */
 mvn_val_t mvn_val_array(void)
 {
     mvn_array_t *arr = mvn_array_new();
@@ -68,6 +118,12 @@ mvn_val_t mvn_val_array(void)
     return (mvn_val_t){.type = MVN_VAL_ARRAY, .arr = arr};
 }
 
+/**
+ * @brief Creates an array value by taking ownership of an existing mvn_array_t.
+ * The provided array pointer will be managed by the mvn_val_t.
+ * @param arr The mvn_array_t to take ownership of. If NULL, creates a NULL value.
+ * @return A mvn_val_t representing the array.
+ */
 mvn_val_t mvn_val_array_take(mvn_array_t *arr)
 {
     if (!arr) {
@@ -76,6 +132,11 @@ mvn_val_t mvn_val_array_take(mvn_array_t *arr)
     return (mvn_val_t){.type = MVN_VAL_ARRAY, .arr = arr};
 }
 
+/**
+ * @brief Creates an empty hash map value.
+ * Allocates a new mvn_hmap_t internally.
+ * @return A mvn_val_t representing the hash map, or MVN_VAL_NULL on allocation failure.
+ */
 mvn_val_t mvn_val_hmap(void)
 {
     mvn_hmap_t *hmap = mvn_hmap_new(); // Calls function now defined in mvn_ds_hmap.c
@@ -85,6 +146,12 @@ mvn_val_t mvn_val_hmap(void)
     return (mvn_val_t){.type = MVN_VAL_HASHMAP, .hmap = hmap};
 }
 
+/**
+ * @brief Creates a hash map value by taking ownership of an existing mvn_hmap_t.
+ * The provided map pointer will be managed by the mvn_val_t.
+ * @param hmap The mvn_hmap_t to take ownership of. If NULL, creates a NULL value.
+ * @return A mvn_val_t representing the hash map.
+ */
 mvn_val_t mvn_val_hmap_take(mvn_hmap_t *hmap)
 {
     if (!hmap) {
@@ -93,6 +160,13 @@ mvn_val_t mvn_val_hmap_take(mvn_hmap_t *hmap)
     return (mvn_val_t){.type = MVN_VAL_HASHMAP, .hmap = hmap};
 }
 
+/**
+ * @brief Frees the resources owned by a mvn_val_t.
+ * If the value type is STRING, ARRAY, or HASHMAP, it frees the associated
+ * dynamic structure recursively. For other types, it does nothing.
+ * Resets the value to MVN_VAL_NULL after freeing to prevent double frees.
+ * @param value Pointer to the value to free. Does nothing if NULL.
+ */
 void mvn_val_free(mvn_val_t *value)
 {
     if (!value) {
@@ -128,6 +202,11 @@ void mvn_val_free(mvn_val_t *value)
     *value = mvn_val_null();
 }
 
+/**
+ * @brief Prints a representation of the value to stdout (for debugging).
+ * Follows a JSON-like format. Handles NULL pointers gracefully.
+ * @param value Pointer to the value to print.
+ */
 void mvn_val_print(const mvn_val_t *value)
 {
     if (!value) {
