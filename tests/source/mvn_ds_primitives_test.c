@@ -76,6 +76,32 @@ static bool test_primitives(void)
     mvn_val_free(&val_i64_zero);
     TEST_ASSERT(val_i64_zero.type == MVN_VAL_NULL, "I64(zero) type mismatch after free");
 
+    // --- Test MVN_VAL_U32 ---
+    mvn_val_t val_u32_pos = mvn_val_u32(12345U);
+    TEST_ASSERT(val_u32_pos.type == MVN_VAL_U32, "U32(pos) type mismatch");
+    TEST_ASSERT(val_u32_pos.u32 == 12345U, "U32(pos) value mismatch");
+    mvn_val_free(&val_u32_pos);
+    TEST_ASSERT(val_u32_pos.type == MVN_VAL_NULL, "U32(pos) type mismatch after free");
+
+    mvn_val_t val_u32_zero = mvn_val_u32(0U);
+    TEST_ASSERT(val_u32_zero.type == MVN_VAL_U32, "U32(zero) type mismatch");
+    TEST_ASSERT(val_u32_zero.u32 == 0U, "U32(zero) value mismatch");
+    mvn_val_free(&val_u32_zero);
+    TEST_ASSERT(val_u32_zero.type == MVN_VAL_NULL, "U32(zero) type mismatch after free");
+
+    // --- Test MVN_VAL_U64 ---
+    mvn_val_t val_u64_pos = mvn_val_u64(9876543210ULL);
+    TEST_ASSERT(val_u64_pos.type == MVN_VAL_U64, "U64(pos) type mismatch");
+    TEST_ASSERT(val_u64_pos.u64 == 9876543210ULL, "U64(pos) value mismatch");
+    mvn_val_free(&val_u64_pos);
+    TEST_ASSERT(val_u64_pos.type == MVN_VAL_NULL, "U64(pos) type mismatch after free");
+
+    mvn_val_t val_u64_zero = mvn_val_u64(0ULL);
+    TEST_ASSERT(val_u64_zero.type == MVN_VAL_U64, "U64(zero) type mismatch");
+    TEST_ASSERT(val_u64_zero.u64 == 0ULL, "U64(zero) value mismatch");
+    mvn_val_free(&val_u64_zero);
+    TEST_ASSERT(val_u64_zero.type == MVN_VAL_NULL, "U64(zero) type mismatch after free");
+
     // --- Test MVN_VAL_F32 ---
     mvn_val_t val_f32_pos = mvn_val_f32(123.456f);
     TEST_ASSERT(val_f32_pos.type == MVN_VAL_F32, "F32(pos) type mismatch");
@@ -114,6 +140,25 @@ static bool test_primitives(void)
     mvn_val_free(&val_f64_zero);
     TEST_ASSERT(val_f64_zero.type == MVN_VAL_NULL, "F64(zero) type mismatch after free");
 
+    // --- Test MVN_VAL_CHAR ---
+    mvn_val_t val_char_alpha = mvn_val_char('A');
+    TEST_ASSERT(val_char_alpha.type == MVN_VAL_CHAR, "Char(A) type mismatch");
+    TEST_ASSERT(val_char_alpha.c == 'A', "Char(A) value mismatch");
+    mvn_val_free(&val_char_alpha);
+    TEST_ASSERT(val_char_alpha.type == MVN_VAL_NULL, "Char(A) type mismatch after free");
+
+    mvn_val_t val_char_digit = mvn_val_char('7');
+    TEST_ASSERT(val_char_digit.type == MVN_VAL_CHAR, "Char(7) type mismatch");
+    TEST_ASSERT(val_char_digit.c == '7', "Char(7) value mismatch");
+    mvn_val_free(&val_char_digit);
+    TEST_ASSERT(val_char_digit.type == MVN_VAL_NULL, "Char(7) type mismatch after free");
+
+    mvn_val_t val_char_null = mvn_val_char('\0');
+    TEST_ASSERT(val_char_null.type == MVN_VAL_CHAR, "Char(\\0) type mismatch");
+    TEST_ASSERT(val_char_null.c == '\0', "Char(\\0) value mismatch");
+    mvn_val_free(&val_char_null);
+    TEST_ASSERT(val_char_null.type == MVN_VAL_NULL, "Char(\\0) type mismatch after free");
+
     return true; // All tests passed
 }
 
@@ -137,6 +182,14 @@ static bool test_primitive_equality_detailed(void)
     mvn_val_t val_i64_50b = mvn_val_i64(50LL);
     mvn_val_t val_i64_60  = mvn_val_i64(60LL);
 
+    mvn_val_t val_u32_100  = mvn_val_u32(100U);
+    mvn_val_t val_u32_100b = mvn_val_u32(100U);
+    mvn_val_t val_u32_200  = mvn_val_u32(200U);
+
+    mvn_val_t val_u64_500  = mvn_val_u64(500ULL);
+    mvn_val_t val_u64_500b = mvn_val_u64(500ULL);
+    mvn_val_t val_u64_600  = mvn_val_u64(600ULL);
+
     mvn_val_t val_f32_1p23  = mvn_val_f32(1.23f);
     mvn_val_t val_f32_1p23b = mvn_val_f32(1.23f);
     mvn_val_t val_f32_1p23e = mvn_val_f32(1.230000001f); // Within default epsilon for f32
@@ -147,34 +200,49 @@ static bool test_primitive_equality_detailed(void)
     mvn_val_t val_f64_3p1415e = mvn_val_f64(3.141500000000001); // Within default epsilon for f64
     mvn_val_t val_f64_3p1416  = mvn_val_f64(3.1416);
 
+    mvn_val_t val_char_a  = mvn_val_char('a');
+    mvn_val_t val_char_ab = mvn_val_char('a'); // Same as val_char_a
+    mvn_val_t val_char_b  = mvn_val_char('b');
+
     // Same type, same value
     TEST_ASSERT(mvn_val_equal(&val_null1, &val_null2), "NULL == NULL failed");
     TEST_ASSERT(mvn_val_equal(&val_bool_t1, &val_bool_t2), "Bool(T) == Bool(T) failed");
     TEST_ASSERT(mvn_val_equal(&val_i32_10, &val_i32_10b), "I32(10) == I32(10) failed");
     TEST_ASSERT(mvn_val_equal(&val_i64_50, &val_i64_50b), "I64(50) == I64(50) failed");
+    TEST_ASSERT(mvn_val_equal(&val_u32_100, &val_u32_100b), "U32(100) == U32(100) failed");
+    TEST_ASSERT(mvn_val_equal(&val_u64_500, &val_u64_500b), "U64(500) == U64(500) failed");
     TEST_ASSERT(mvn_val_equal(&val_f32_1p23, &val_f32_1p23b), "F32(1.23) == F32(1.23) failed");
     TEST_ASSERT(mvn_val_equal(&val_f32_1p23, &val_f32_1p23e), "F32(1.23) == F32(1.23+eps) failed");
     TEST_ASSERT(mvn_val_equal(&val_f64_3p1415, &val_f64_3p1415b),
                 "F64(3.1415) == F64(3.1415) failed");
     TEST_ASSERT(mvn_val_equal(&val_f64_3p1415, &val_f64_3p1415e),
                 "F64(3.1415) == F64(3.1415+eps) failed");
+    TEST_ASSERT(mvn_val_equal(&val_char_a, &val_char_ab), "Char(a) == Char(a) failed");
 
     // Same type, different value
     TEST_ASSERT(!mvn_val_equal(&val_bool_t1, &val_bool_f1), "Bool(T) == Bool(F) reported true");
     TEST_ASSERT(!mvn_val_equal(&val_i32_10, &val_i32_20), "I32(10) == I32(20) reported true");
     TEST_ASSERT(!mvn_val_equal(&val_i64_50, &val_i64_60), "I64(50) == I64(60) reported true");
+    TEST_ASSERT(!mvn_val_equal(&val_u32_100, &val_u32_200), "U32(100) == U32(200) reported true");
+    TEST_ASSERT(!mvn_val_equal(&val_u64_500, &val_u64_600), "U64(500) == U64(600) reported true");
     TEST_ASSERT(!mvn_val_equal(&val_f32_1p23, &val_f32_1p24),
                 "F32(1.23) == F32(1.24) reported true");
     TEST_ASSERT(!mvn_val_equal(&val_f64_3p1415, &val_f64_3p1416),
                 "F64(3.1415) == F64(3.1416) reported true");
+    TEST_ASSERT(!mvn_val_equal(&val_char_a, &val_char_b), "Char(a) == Char(b) reported true");
 
     // Different types
     TEST_ASSERT(!mvn_val_equal(&val_null1, &val_bool_t1), "NULL == Bool reported true");
     TEST_ASSERT(!mvn_val_equal(&val_bool_t1, &val_i32_10), "Bool == I32 reported true");
     TEST_ASSERT(!mvn_val_equal(&val_i32_10, &val_i64_50), "I32 == I64 reported true");
-    TEST_ASSERT(!mvn_val_equal(&val_i64_50, &val_f32_1p23), "I64 == F32 reported true");
+    TEST_ASSERT(!mvn_val_equal(&val_i64_50, &val_u32_100), "I64 == U32 reported true");
+    TEST_ASSERT(!mvn_val_equal(&val_u32_100, &val_u64_500), "U32 == U64 reported true");
+    TEST_ASSERT(!mvn_val_equal(&val_u64_500, &val_f32_1p23), "U64 == F32 reported true");
     TEST_ASSERT(!mvn_val_equal(&val_f32_1p23, &val_f64_3p1415), "F32 == F64 reported true");
-    TEST_ASSERT(!mvn_val_equal(&val_i32_10, &val_f32_1p23), "I32 == F32 reported true");
+    TEST_ASSERT(!mvn_val_equal(&val_f64_3p1415, &val_char_a), "F64 == Char reported true");
+    TEST_ASSERT(!mvn_val_equal(&val_char_a, &val_null1), "Char == NULL reported true");
+    TEST_ASSERT(!mvn_val_equal(&val_i32_10, &val_u32_100),
+                "I32 == U32 reported true"); // Signed vs Unsigned
 
     // Freeing primitives just resets their type, no actual memory deallocation for the value itself
     mvn_val_free(&val_null1);
@@ -188,6 +256,12 @@ static bool test_primitive_equality_detailed(void)
     mvn_val_free(&val_i64_50);
     mvn_val_free(&val_i64_50b);
     mvn_val_free(&val_i64_60);
+    mvn_val_free(&val_u32_100);
+    mvn_val_free(&val_u32_100b);
+    mvn_val_free(&val_u32_200);
+    mvn_val_free(&val_u64_500);
+    mvn_val_free(&val_u64_500b);
+    mvn_val_free(&val_u64_600);
     mvn_val_free(&val_f32_1p23);
     mvn_val_free(&val_f32_1p23b);
     mvn_val_free(&val_f32_1p23e);
@@ -196,6 +270,9 @@ static bool test_primitive_equality_detailed(void)
     mvn_val_free(&val_f64_3p1415b);
     mvn_val_free(&val_f64_3p1415e);
     mvn_val_free(&val_f64_3p1416);
+    mvn_val_free(&val_char_a);
+    mvn_val_free(&val_char_ab);
+    mvn_val_free(&val_char_b);
 
     return true;
 }
@@ -236,6 +313,18 @@ static bool test_primitive_print(void)
     printf("\n");
     mvn_val_free(&val_i64_p);
 
+    mvn_val_t val_u32_p = mvn_val_u32(3000000000U);
+    printf("  U32: ");
+    mvn_val_print(&val_u32_p);
+    printf("\n");
+    mvn_val_free(&val_u32_p);
+
+    mvn_val_t val_u64_p = mvn_val_u64(12345678901234567890ULL);
+    printf("  U64: ");
+    mvn_val_print(&val_u64_p);
+    printf("\n");
+    mvn_val_free(&val_u64_p);
+
     mvn_val_t val_f32_p = mvn_val_f32(3.14f);
     printf("  F32: ");
     mvn_val_print(&val_f32_p);
@@ -247,6 +336,12 @@ static bool test_primitive_print(void)
     mvn_val_print(&val_f64_p);
     printf("\n");
     mvn_val_free(&val_f64_p);
+
+    mvn_val_t val_char_p = mvn_val_char('X');
+    printf("  Char: ");
+    mvn_val_print(&val_char_p);
+    printf("\n");
+    mvn_val_free(&val_char_p);
 
     printf("End of mvn_val_print primitive types test.\n");
     return true; // Test passed if no crashes
@@ -265,10 +360,16 @@ static bool test_val_type_to_string_conversion(void)
                 "MVN_VAL_I32 to string failed");
     TEST_ASSERT(strcmp(mvn_val_type_to_str(MVN_VAL_I64), "I64") == 0,
                 "MVN_VAL_I64 to string failed");
+    TEST_ASSERT(strcmp(mvn_val_type_to_str(MVN_VAL_U32), "U32") == 0,
+                "MVN_VAL_U32 to string failed");
+    TEST_ASSERT(strcmp(mvn_val_type_to_str(MVN_VAL_U64), "U64") == 0,
+                "MVN_VAL_U64 to string failed");
     TEST_ASSERT(strcmp(mvn_val_type_to_str(MVN_VAL_F32), "F32") == 0,
                 "MVN_VAL_F32 to string failed");
     TEST_ASSERT(strcmp(mvn_val_type_to_str(MVN_VAL_F64), "F64") == 0,
                 "MVN_VAL_F64 to string failed");
+    TEST_ASSERT(strcmp(mvn_val_type_to_str(MVN_VAL_CHAR), "CHAR") == 0,
+                "MVN_VAL_CHAR to string failed");
     TEST_ASSERT(strcmp(mvn_val_type_to_str(MVN_VAL_STRING), "STRING") == 0,
                 "MVN_VAL_STRING to string failed");
     TEST_ASSERT(strcmp(mvn_val_type_to_str(MVN_VAL_ARRAY), "ARRAY") == 0,
