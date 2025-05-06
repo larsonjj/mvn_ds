@@ -8,7 +8,7 @@ function(mvn_ds_add_test_executable target source)
     target_include_directories(${target} PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/include
     )
-    target_link_libraries(${target} PRIVATE mvn)
+    target_link_libraries(${target} PRIVATE mvn_ds)
     set_target_properties(${target} PROPERTIES
         C_STANDARD 99
         C_STANDARD_REQUIRED ON
@@ -40,7 +40,7 @@ add_custom_target(mvn_ds_test_build_all DEPENDS ${MVN_DS_TEST_TARGETS})
 set_target_properties(mvn_ds_test_build_all PROPERTIES EXCLUDE_FROM_ALL FALSE)
 
 # Make sure the meta-target depends on the main mvn target
-add_dependencies(mvn_ds_test_build_all mvn)
+add_dependencies(mvn_ds_test_build_all mvn_ds)
 
 ##### TESTS #####
 # Register all tests with CTest
