@@ -183,43 +183,43 @@ bool mvn_string_append(mvn_string_t *dest_ptr, const mvn_string_t *src_ptr)
 
 bool mvn_string_equal(const mvn_string_t *str1_ptr, const mvn_string_t *str2_ptr)
 {
-    if (str1_ptr == str2_ptr) {
-        return true; // Same pointer or both NULL
-    }
+    // If either pointer is NULL, they are not equal in the context of valid strings.
     if (str1_ptr == NULL || str2_ptr == NULL) {
-        return false; // One is NULL, the other isn't
+        return false;
     }
+    // If both point to the exact same object, they are equal.
+    if (str1_ptr == str2_ptr) {
+        return true;
+    }
+    // If lengths differ, they are not equal.
     if (str1_ptr->length != str2_ptr->length) {
-        return false; // Different lengths
+        return false;
     }
+    // If both have length 0, they are equal (empty strings).
     if (str1_ptr->length == 0) {
-        return true; // Both are empty strings
+        return true;
     }
-    // Compare content using memcmp (safe for potential embedded nulls, though not expected here)
+    // Compare content using memcmp.
     return memcmp(str1_ptr->data, str2_ptr->data, str1_ptr->length) == 0;
 }
 
-// Implementation for mvn_string_equal_cstr
 bool mvn_string_equal_cstr(const mvn_string_t *str1_ptr, const char *cstr2)
 {
-    if (str1_ptr == NULL || cstr2 == NULL) {
-        return (str1_ptr == NULL && cstr2 == NULL); // True only if both are NULL (edge case)
-                                                    // Standard behavior is false if one is NULL.
-                                                    // Let's stick to false if either is NULL.
-        // return false; // More conventional: comparison with NULL is false
-    }
+    // If either pointer is NULL, they are not equal.
     if (str1_ptr == NULL || cstr2 == NULL) {
         return false;
     }
 
     size_t cstr2_len = strlen(cstr2);
+    // If lengths differ, they are not equal.
     if (str1_ptr->length != cstr2_len) {
-        return false; // Different lengths
+        return false;
     }
+    // If both have length 0, they are equal.
     if (str1_ptr->length == 0) {
-        return true; // Both are empty
+        return true;
     }
-    // Compare content
+    // Compare content.
     return memcmp(str1_ptr->data, cstr2, str1_ptr->length) == 0;
 }
 
