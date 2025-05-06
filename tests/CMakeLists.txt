@@ -20,7 +20,7 @@ endfunction()
 set(MVN_DS_TEST_MODULES
     array
     hmap
-    primatives
+    primitives
     string
 )
 
