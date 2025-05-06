@@ -1,8 +1,9 @@
 /*
  * Copyright (c) 2024 Jake Larson
  */
-#include "mvn_ds/mvn_ds.h" // Provides mvn_val_null, mvn_val_free
 #include "mvn_ds/mvn_ds_arr.h"
+
+#include "mvn_ds/mvn_ds.h"       // Provides mvn_val_null, mvn_val_free
 #include "mvn_ds/mvn_ds_utils.h" // Provides memory macros (MVN_DS_*)
 
 #include <assert.h>
@@ -29,7 +30,7 @@ static void *mvn_reallocate_arr(void *pointer, size_t new_size)
     }
     void *result = MVN_DS_REALLOC(pointer, new_size);
     if (result == NULL && new_size > 0) { // Check if allocation actually failed
-        fprintf(stderr, "[MVN_DS_ARRAY] Memory reallocation failed!\n");
+        fprintf(stderr, "[MVN_DS_ARR] Memory reallocation failed!\n");
     }
     return result;
 }
@@ -47,13 +48,13 @@ static bool mvn_arr_ensure_capacity(mvn_arr_t *array)
         return true; // Enough space
     }
     size_t old_capacity = array->capacity;
-    size_t new_capacity = old_capacity < MVN_DS_ARRAY_INITIAL_CAPACITY ?
-                              MVN_DS_ARRAY_INITIAL_CAPACITY :
-                              old_capacity * MVN_DS_ARRAY_GROWTH_FACTOR;
+    size_t new_capacity = old_capacity < MVN_DS_ARR_INITIAL_CAPACITY ?
+                              MVN_DS_ARR_INITIAL_CAPACITY :
+                              old_capacity * MVN_DS_ARR_GROWTH_FACTOR;
 
     // Check for potential overflow during growth calculation
     if (new_capacity < old_capacity && old_capacity > 0) { // Check if overflow occurred
-        fprintf(stderr, "[MVN_DS_ARRAY] Array capacity overflow during resize calculation.\n");
+        fprintf(stderr, "[MVN_DS_ARR] Array capacity overflow during resize calculation.\n");
         // Try setting to count + 1 as a last resort if possible
         if (SIZE_MAX - 1 < array->count) {
             return false; // Cannot even add one more element
@@ -63,12 +64,12 @@ static bool mvn_arr_ensure_capacity(mvn_arr_t *array)
             return false;
         }
     } else if (new_capacity == 0 && old_capacity == 0) { // Handle initial allocation case
-        new_capacity = MVN_DS_ARRAY_INITIAL_CAPACITY;
+        new_capacity = MVN_DS_ARR_INITIAL_CAPACITY;
     }
 
     // Check for overflow before calculating allocation size
     if (new_capacity > SIZE_MAX / sizeof(mvn_val_t)) {
-        fprintf(stderr, "[MVN_DS_ARRAY] Array capacity overflow calculating allocation size.\n");
+        fprintf(stderr, "[MVN_DS_ARR] Array capacity overflow calculating allocation size.\n");
         return false;
     }
     size_t allocation_size = new_capacity * sizeof(mvn_val_t);
@@ -110,7 +111,7 @@ mvn_arr_t *mvn_arr_new_with_capacity(size_t capacity)
         // Check for overflow before calculating allocation size
         if (capacity > SIZE_MAX / sizeof(mvn_val_t)) {
             MVN_DS_FREE(array);
-            fprintf(stderr, "[MVN_DS_ARRAY] Initial capacity overflow.\n");
+            fprintf(stderr, "[MVN_DS_ARR] Initial capacity overflow.\n");
             return NULL;
         }
         size_t allocation_size = capacity * sizeof(mvn_val_t);
@@ -131,13 +132,13 @@ mvn_arr_t *mvn_arr_new_with_capacity(size_t capacity)
 
 /**
  * @brief Creates a new, empty dynamic array with a default initial capacity.
- * Uses MVN_DS_ARRAY_INITIAL_CAPACITY defined in the header.
+ * Uses MVN_DS_ARR_INITIAL_CAPACITY defined in the header.
  * @return A pointer to the new mvn_arr_t, or NULL on allocation failure.
  */
 mvn_arr_t *mvn_arr_new(void)
 {
-    // Use MVN_DS_ARRAY_INITIAL_CAPACITY by default
-    return mvn_arr_new_with_capacity(MVN_DS_ARRAY_INITIAL_CAPACITY);
+    // Use MVN_DS_ARR_INITIAL_CAPACITY by default
+    return mvn_arr_new_with_capacity(MVN_DS_ARR_INITIAL_CAPACITY);
 }
 
 /**

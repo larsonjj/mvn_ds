@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2024 Jake Larson
  */
-#ifndef MVN_DS_ARRAY_H
-#define MVN_DS_ARRAY_H
+#ifndef MVN_DS_ARR_H
+#define MVN_DS_ARR_H
 
 #include "mvn_ds_types.h" // Include the structure definitions
 
@@ -14,9 +14,9 @@ extern "C" {
 #endif /* __cplusplus */
 
 // Default initial capacity for new arrays created with mvn_arr_new()
-#define MVN_DS_ARRAY_INITIAL_CAPACITY 8
+#define MVN_DS_ARR_INITIAL_CAPACITY 8
 // Factor by which the array capacity grows when resizing
-#define MVN_DS_ARRAY_GROWTH_FACTOR 2
+#define MVN_DS_ARR_GROWTH_FACTOR 2
 
 // --- Array Operations ---
 
@@ -42,4 +42,4 @@ bool mvn_arr_set(mvn_arr_t *array, size_t index, mvn_val_t value);
 }
 #endif /* __cplusplus */
 
-#endif /* MVN_DS_ARRAY_H */
+#endif /* MVN_DS_ARR_H */

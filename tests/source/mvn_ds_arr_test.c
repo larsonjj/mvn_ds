@@ -1,8 +1,9 @@
 /*
  * Copyright (c) 2024 Jake Larson
  */
-#include "mvn_ds/mvn_ds.h"
 #include "mvn_ds_arr_test.h"
+
+#include "mvn_ds/mvn_ds.h"
 #include "mvn_ds_test_utils.h"
 
 #include <math.h>    // For fabsf, fabs
@@ -18,7 +19,7 @@ static int test_array_creation_and_destruction(void)
     TEST_ASSERT(array != NULL, "Failed to create array");
     TEST_ASSERT(array->count == 0, "New array count should be 0");
     // Expect default initial capacity now
-    TEST_ASSERT(array->capacity == MVN_DS_ARRAY_INITIAL_CAPACITY,
+    TEST_ASSERT(array->capacity == MVN_DS_ARR_INITIAL_CAPACITY,
                 "New array capacity should be MVN_INITIAL_CAPACITY");
     TEST_ASSERT(array->data != NULL, "New array data pointer should be non-NULL");
 
