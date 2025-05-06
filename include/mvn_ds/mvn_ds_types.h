@@ -25,8 +25,11 @@ typedef enum {
     MVN_VAL_BOOL,   /**< Represents a boolean value (true/false). */
     MVN_VAL_I32,    /**< Represents a 32-bit signed integer. */
     MVN_VAL_I64,    /**< Represents a 64-bit signed integer. */
+    MVN_VAL_U32,    /**< Represents a 32-bit unsigned integer. */
+    MVN_VAL_U64,    /**< Represents a 64-bit unsigned integer. */
     MVN_VAL_F32,    /**< Represents a 32-bit floating-point number. */
     MVN_VAL_F64,    /**< Represents a 64-bit floating-point number (double). */
+    MVN_VAL_CHAR,   /**< Represents a single character. */
     MVN_VAL_STRING, /**< Represents an owned dynamic string (mvn_str_t*). */
     MVN_VAL_ARRAY,  /**< Represents an owned dynamic array (mvn_arr_t*). */
     MVN_VAL_HASHMAP /**< Represents an owned dynamic hash map (mvn_hmap_t*). */
@@ -55,8 +58,11 @@ struct mvn_val_t {
         bool        b;    /**< Value if type is MVN_VAL_BOOL. */
         int32_t     i32;  /**< Value if type is MVN_VAL_I32. */
         int64_t     i64;  /**< Value if type is MVN_VAL_I64. */
+        uint32_t    u32;  /**< Value if type is MVN_VAL_U32. */
+        uint64_t    u64;  /**< Value if type is MVN_VAL_U64. */
         float       f32;  /**< Value if type is MVN_VAL_F32. */
         double      f64;  /**< Value if type is MVN_VAL_F64. */
+        char        c;    /**< Value if type is MVN_VAL_CHAR. */
         mvn_str_t  *str;  /**< Pointer to owned string if type is MVN_VAL_STRING. */
         mvn_arr_t  *arr;  /**< Pointer to owned array if type is MVN_VAL_ARRAY. */
         mvn_hmap_t *hmap; /**< Pointer to owned hash map if type is MVN_VAL_HASHMAP. */

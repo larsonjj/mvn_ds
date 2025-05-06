@@ -26,8 +26,11 @@ mvn_val_t mvn_val_null(void);
 mvn_val_t mvn_val_bool(bool b);
 mvn_val_t mvn_val_i32(int32_t i32);
 mvn_val_t mvn_val_i64(int64_t i64);
+mvn_val_t mvn_val_u32(uint32_t u32);
+mvn_val_t mvn_val_u64(uint64_t u64);
 mvn_val_t mvn_val_f32(float f32);
 mvn_val_t mvn_val_f64(double f64);
+mvn_val_t mvn_val_char(char c);
 mvn_val_t mvn_val_str(const char *chars);      // Creates a new owned string
 mvn_val_t mvn_val_str_take(mvn_str_t *str);    // Takes ownership of an existing string
 mvn_val_t mvn_val_arr(void);                   // Creates a new empty owned array
