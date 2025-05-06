@@ -185,6 +185,86 @@ static int test_array_resize(void)
     return true; // Test passed
 }
 
+static int test_array_ownership_free(void)
+{
+    mvn_array_t *array = mvn_array_new();
+    TEST_ASSERT(array != NULL, "Failed to create array for ownership test");
+
+    // Push dynamic types
+    bool push_ok = true;
+    push_ok &= mvn_array_push(array, mvn_val_string("string1"));
+    push_ok &= mvn_array_push(array, mvn_val_array()); // Push an empty array
+    push_ok &= mvn_array_push(array, mvn_val_hmap());  // Push an empty hmap
+    push_ok &= mvn_array_push(array, mvn_val_string("string2"));
+
+    // Add an element to the nested array to ensure deep free is tested
+    mvn_val_t *nested_array_val = mvn_array_get(array, 1);
+    TEST_ASSERT(nested_array_val != NULL && nested_array_val->type == MVN_VAL_ARRAY,
+                "Failed to get nested array");
+    if (nested_array_val && nested_array_val->type == MVN_VAL_ARRAY) {
+        push_ok &= mvn_array_push(nested_array_val->arr, mvn_val_string("nested_string"));
+    }
+
+    TEST_ASSERT(push_ok, "Failed to push dynamic types for ownership test");
+    TEST_ASSERT(array->count == 4, "Count should be 4");
+
+    // Freeing the array should free all contained dynamic values recursively.
+    // This test primarily relies on memory checking tools (like Valgrind or ASan)
+    // to confirm no leaks occur.
+    mvn_array_free(array);
+
+    // Test freeing an array containing values taken via _take
+    array                   = mvn_array_new();
+    mvn_string_t *taken_str = mvn_string_new("taken");
+    mvn_array_push(array, mvn_val_string_take(taken_str));
+    mvn_array_free(array); // Should free the taken string
+
+    return true; // Test passed (pending memory check)
+}
+
+static int test_array_ownership_set(void)
+{
+    mvn_array_t *array = mvn_array_new();
+    TEST_ASSERT(array != NULL, "Failed to create array for set ownership test");
+
+    // Push initial dynamic value
+    mvn_array_push(array, mvn_val_string("original_string"));
+    TEST_ASSERT(array->count == 1, "Count should be 1");
+
+    // Set a new dynamic value over the old one
+    // The old "original_string" should be freed by mvn_array_set.
+    bool set_ok = mvn_array_set(array, 0, mvn_val_string("new_string"));
+    TEST_ASSERT(set_ok, "Set with dynamic type failed");
+    TEST_ASSERT(array->count == 1, "Count should remain 1 after set");
+    mvn_val_t *val = mvn_array_get(array, 0);
+    TEST_ASSERT(val != NULL && val->type == MVN_VAL_STRING && val->str != NULL &&
+                    strcmp(val->str->data, "new_string") == 0,
+                "Value mismatch after setting dynamic type");
+
+    // Set a primitive value over the dynamic one
+    // The "new_string" should be freed by mvn_array_set.
+    set_ok = mvn_array_set(array, 0, mvn_val_i32(123));
+    TEST_ASSERT(set_ok, "Set with primitive type failed");
+    TEST_ASSERT(array->count == 1, "Count should remain 1 after set");
+    val = mvn_array_get(array, 0);
+    TEST_ASSERT(val != NULL && val->type == MVN_VAL_I32 && val->i32 == 123,
+                "Value mismatch after setting primitive type");
+
+    // Set a dynamic value using _take over the primitive
+    mvn_string_t *taken_str = mvn_string_new("taken_set");
+    set_ok                  = mvn_array_set(array, 0, mvn_val_string_take(taken_str));
+    TEST_ASSERT(set_ok, "Set with taken string failed");
+    val = mvn_array_get(array, 0);
+    TEST_ASSERT(val != NULL && val->type == MVN_VAL_STRING && val->str == taken_str,
+                "Value mismatch after setting taken string");
+
+    // Freeing the array should free the last set value ("taken_set").
+    // Again, relies on memory checking tools.
+    mvn_array_free(array);
+
+    return true; // Test passed (pending memory check)
+}
+
 // --- Test Runner ---
 
 /**
@@ -204,7 +284,8 @@ int run_array_tests(int *passed_tests, int *failed_tests, int *total_tests)
     RUN_TEST(test_array_push_and_get);
     RUN_TEST(test_array_set);
     RUN_TEST(test_array_resize);
-    // Add RUN_TEST for test_array_ownership here when implemented
+    RUN_TEST(test_array_ownership_free);
+    RUN_TEST(test_array_ownership_set);
 
     int tests_run = (*passed_tests - passed_before) + (*failed_tests - failed_before);
     (*total_tests) += tests_run;
