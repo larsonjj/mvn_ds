@@ -1,7 +1,6 @@
 ##### TEST SUITE MACRO #####
 function(mvn_ds_add_test_executable target source)
     add_executable(${target} ${source})
-    add_dependencies(${target} copy_test_assets)
     target_compile_definitions(${target} PRIVATE
         ASSET_DIR="${CMAKE_BINARY_DIR}/tests/assets"
     )
@@ -21,14 +20,15 @@ endfunction()
 set(MVN_DS_TEST_MODULES
     array
     hmap
-    primitives
+    primatives
     string
 )
 
 # Build all test executables
 set(MVN_DS_TEST_TARGETS)
 foreach(MODULE ${MVN_DS_TEST_MODULES})
-    set(TARGET_NAME mvn_ds_test_${MODULE})
+    message(STATUS "Building test executable for module: mvn_ds_${MODULE}_test")
+    set(TARGET_NAME mvn_ds_${MODULE}_test)
     list(APPEND MVN_DS_TEST_TARGETS ${TARGET_NAME})
     mvn_ds_add_test_executable(${TARGET_NAME} source/mvn_ds_${MODULE}_test.c)
 endforeach()
