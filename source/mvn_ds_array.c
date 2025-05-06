@@ -4,7 +4,7 @@
 #include "mvn_ds/mvn_ds_array.h"
 
 #include "mvn_ds/mvn_ds.h"       // Provides mvn_val_null, mvn_val_free
-#include "mvn_ds/mvn_ds_utils.h" // Provides mvn_reallocate
+#include "mvn_ds/mvn_ds_utils.h" // Provides memory macros (MVN_DS_*)
 
 #include <assert.h>
 #include <stdbool.h>
@@ -12,6 +12,28 @@
 #include <stdlib.h> // For SIZE_MAX
 
 // --- Internal Helper Functions ---
+
+/**
+ * @internal
+ * @brief Reallocates memory for the array data, handling potential errors.
+ * Uses MVN_DS_REALLOC and MVN_DS_FREE.
+ * @param pointer Existing pointer (or NULL).
+ * @param new_size Desired new size. If 0, frees the pointer.
+ * @return Pointer to the reallocated memory, or NULL if new_size is 0 or allocation fails.
+ */
+static void *mvn_reallocate_array(void *pointer, size_t new_size) // Renamed function
+{
+    // old_size is not needed for standard realloc
+    if (new_size == 0) {
+        MVN_DS_FREE(pointer);
+        return NULL;
+    }
+    void *result = MVN_DS_REALLOC(pointer, new_size);
+    if (result == NULL && new_size > 0) { // Check if allocation actually failed
+        fprintf(stderr, "[MVN_DS_ARRAY] Memory reallocation failed!\n");
+    }
+    return result;
+}
 
 /**
  * @internal
@@ -52,10 +74,9 @@ static bool mvn_array_ensure_capacity(mvn_array_t *array)
     }
     size_t allocation_size = new_capacity * sizeof(mvn_val_t);
 
-    mvn_val_t *new_data = (mvn_val_t *)mvn_reallocate( // This now calls the header version
-        array->data,
-        old_capacity * sizeof(mvn_val_t),
-        allocation_size);
+    // Pass only pointer and new_size to the local mvn_reallocate_array
+    mvn_val_t *new_data =
+        (mvn_val_t *)mvn_reallocate_array(array->data, allocation_size); // Updated call site
     if (!new_data) {
         return false;
     }
