@@ -121,7 +121,7 @@ static bool mvn_hmap_adjust_capacity(mvn_hmap_t *hmap, size_t new_capacity)
  * @param capacity The initial number of buckets. If 0, allocation happens on first insert.
  * @return A pointer to the new mvn_hmap_t, or NULL on allocation failure.
  */
-mvn_hmap_t *mvn_hmap_new_cap(size_t capacity)
+mvn_hmap_t *mvn_hmap_new_capacity(size_t capacity)
 {
     mvn_hmap_t *hmap_ptr = (mvn_hmap_t *)MVN_DS_MALLOC(sizeof(mvn_hmap_t));
     if (hmap_ptr == NULL) {
@@ -160,7 +160,7 @@ mvn_hmap_t *mvn_hmap_new_cap(size_t capacity)
 mvn_hmap_t *mvn_hmap_new(void)
 {
     // Use MVN_DS_HMAP_INITIAL_CAPACITY by default
-    return mvn_hmap_new_cap(MVN_DS_HMAP_INITIAL_CAPACITY);
+    return mvn_hmap_new_capacity(MVN_DS_HMAP_INITIAL_CAPACITY);
 }
 
 /**

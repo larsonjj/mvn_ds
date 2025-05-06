@@ -32,7 +32,7 @@ static bool test_hmap_creation_and_destruction(void)
     mvn_hmap_free(hmap); // Should not crash
 
     // Test with specific initial capacity (e.g., 0)
-    hmap = mvn_hmap_new_cap(0);
+    hmap = mvn_hmap_new_capacity(0);
     TEST_ASSERT(hmap != NULL, "Failed to create hash map with capacity 0");
     TEST_ASSERT(hmap->count == 0, "New hash map (cap 0) count should be 0");
     TEST_ASSERT(hmap->capacity == 0, "New hash map (cap 0) capacity should be 0");
@@ -40,7 +40,7 @@ static bool test_hmap_creation_and_destruction(void)
     mvn_hmap_free(hmap);
 
     // Test with specific initial capacity > 0
-    hmap = mvn_hmap_new_cap(32);
+    hmap = mvn_hmap_new_capacity(32);
     TEST_ASSERT(hmap != NULL, "Failed to create hash map with capacity 32");
     TEST_ASSERT(hmap->count == 0, "New hash map (cap 32) count should be 0");
     TEST_ASSERT(hmap->capacity == 32, "New hash map (cap 32) capacity should be 32");
@@ -152,7 +152,7 @@ static bool test_hmap_delete(void)
 static bool test_hmap_resize(void)
 {
     // Start with small capacity to force resize
-    mvn_hmap_t *hmap = mvn_hmap_new_cap(2);
+    mvn_hmap_t *hmap = mvn_hmap_new_capacity(2);
     TEST_ASSERT(hmap != NULL, "Failed to create hash map for resize test");
     TEST_ASSERT(hmap->capacity == 2, "Initial capacity should be 2");
 
@@ -248,7 +248,7 @@ static bool test_hmap_ownership(void)
 static bool test_hmap_collisions(void)
 {
     // Use a small capacity to increase likelihood/ease of collisions
-    mvn_hmap_t *hmap = mvn_hmap_new_cap(2);
+    mvn_hmap_t *hmap = mvn_hmap_new_capacity(2);
     TEST_ASSERT(hmap != NULL, "Failed to create hash map for collision test");
 
     // Assume "keyA" and "keyC" collide in a map of capacity 2 (hash % 2 is same)
