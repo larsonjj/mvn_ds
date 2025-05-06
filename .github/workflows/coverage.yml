@@ -30,6 +30,5 @@ jobs:
             - name: Generate coverage report
               run: |
                   lcov --capture --directory ${{github.workspace}}/build --output-file coverage.info
-                  lcov --remove coverage.info '*/_deps/*' --output-file coverage.info
                   lcov --remove coverage.info '*/tests/*' --output-file coverage.info
                   lcov --list coverage.info
