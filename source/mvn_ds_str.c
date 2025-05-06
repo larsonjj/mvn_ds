@@ -85,7 +85,6 @@ static bool mvn_str_ensure_capacity(mvn_str_t *string_ptr, size_t additional_len
  */
 mvn_str_t *mvn_str_new_capacity(size_t capacity)
 {
-    /* Copyright (c) 2024 Jake Larson */
     // Prevent capacity + 1 from overflowing or becoming SIZE_MAX.
     // If capacity is SIZE_MAX, capacity + 1 wraps to 0.
     // If capacity is SIZE_MAX - 1, capacity + 1 is SIZE_MAX.

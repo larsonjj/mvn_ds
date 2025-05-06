@@ -235,7 +235,6 @@ bool mvn_arr_set(mvn_arr_t *array, size_t index, mvn_val_t value)
  */
 size_t mvn_arr_get_count(const mvn_arr_t *array)
 {
-    /* Copyright (c) 2024 Jake Larson */
     if (!array) {
         return 0;
     }
@@ -249,7 +248,6 @@ size_t mvn_arr_get_count(const mvn_arr_t *array)
  */
 size_t mvn_arr_get_capacity(const mvn_arr_t *array)
 {
-    /* Copyright (c) 2024 Jake Larson */
     if (!array) {
         return 0;
     }
@@ -263,7 +261,6 @@ size_t mvn_arr_get_capacity(const mvn_arr_t *array)
  */
 bool mvn_arr_is_empty(const mvn_arr_t *array)
 {
-    /* Copyright (c) 2024 Jake Larson */
     if (!array) {
         return true; // A NULL array is considered empty
     }

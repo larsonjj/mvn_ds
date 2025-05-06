@@ -3,7 +3,7 @@
 - Set Column limit to 100
 - Comments should use 4 spaces after a statement when single line and allow double forward slashes (`//`)
 - Change to use `stdbool.h` library for `true` or `false` values insteed of `0` or `1`
-- Add Copyright section. Use `Copyright (c) {year} Jake Larson` for copyright notice
+- Add Copyright section only to top of file. Use `Copyright (c) {year} Jake Larson` for copyright notice
 - Declare all local variables of the same type on a separate line
 - Prefer using MVN_DS_MALLOC, MVN_DS_CALLOC, MVN_DS_REALLOC, and MVN_DS_FREE for memory managment as they are aliases for SDL memory management functions
 - Include instructions to document macros in header file

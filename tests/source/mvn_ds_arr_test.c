@@ -462,7 +462,6 @@ static bool test_array_new_slots_initialized_null(void)
  */
 static bool test_array_getters(void)
 {
-    /* Copyright (c) 2024 Jake Larson */
     mvn_arr_t *array_ptr = NULL;
 
     // Test with NULL array

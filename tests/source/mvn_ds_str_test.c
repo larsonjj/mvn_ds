@@ -362,7 +362,6 @@ static bool test_string_val_take_null(void)
  */
 static bool test_string_new_capacity_overflow(void)
 {
-    /* Copyright (c) 2024 Jake Larson */
     mvn_str_t *str_overflow = NULL;
 
     // Test with SIZE_MAX: should return NULL due to the check (capacity >= SIZE_MAX - 1)

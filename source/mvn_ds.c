@@ -50,7 +50,6 @@ mvn_val_t mvn_val_bool(bool b_val)
  */
 mvn_val_t mvn_val_i8(int8_t i8_val)
 {
-    /* Copyright (c) 2024 Jake Larson */
     mvn_val_t val_item;
     val_item.type = MVN_VAL_I8;
     val_item.i8   = i8_val;
@@ -64,7 +63,6 @@ mvn_val_t mvn_val_i8(int8_t i8_val)
  */
 mvn_val_t mvn_val_i16(int16_t i16_val)
 {
-    /* Copyright (c) 2024 Jake Larson */
     mvn_val_t val_item;
     val_item.type = MVN_VAL_I16;
     val_item.i16  = i16_val;
@@ -101,7 +99,6 @@ mvn_val_t mvn_val_i64(int64_t i64_val)
  */
 mvn_val_t mvn_val_u8(uint8_t u8_val)
 {
-    /* Copyright (c) 2024 Jake Larson */
     mvn_val_t val_item;
     val_item.type = MVN_VAL_U8;
     val_item.u8   = u8_val;
@@ -115,7 +112,6 @@ mvn_val_t mvn_val_u8(uint8_t u8_val)
  */
 mvn_val_t mvn_val_u16(uint16_t u16_val)
 {
-    /* Copyright (c) 2024 Jake Larson */
     mvn_val_t val_item;
     val_item.type = MVN_VAL_U16;
     val_item.u16  = u16_val;
@@ -196,7 +192,6 @@ mvn_val_t mvn_val_char(char char_val)
  */
 mvn_val_t mvn_val_ptr(void *ptr_val)
 {
-    /* Copyright (c) 2024 Jake Larson */
     mvn_val_t val_item;
     val_item.type = MVN_VAL_PTR;
     val_item.ptr  = ptr_val;
