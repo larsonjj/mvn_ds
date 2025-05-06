@@ -280,28 +280,48 @@ bool mvn_hmap_set(mvn_hmap_t *hmap, mvn_string_t *key, mvn_val_t value)
 
 /**
  * @brief Sets a key-value pair using a C string for the key.
- * Creates a new mvn_string_t for the key internally and takes ownership.
- * Takes ownership of the value's dynamic data.
- * Frees the existing value if the key already exists. Resizes if load factor exceeds limit.
- * @param hmap The hash map. Must not be NULL.
+ * Creates a new mvn_string_t for the key internally.
+ * If the operation is successful and it's a new key, mvn_hmap_set takes ownership of the created
+ * key. If the operation is successful and it's a key replacement, mvn_hmap_set frees the created
+ * key. If the operation fails (e.g., hmap is NULL or internal allocation failure), this function
+ * ensures the created key is freed. Takes ownership of the value's dynamic data if the set is
+ * successful. Frees the existing value if the key already exists. Resizes if load factor exceeds
+ * limit.
+ * @param hmap The hash map.
  * @param key_cstr The C string key. Must not be NULL.
- * @param value The value (ownership is taken if dynamic).
+ * @param value The value (ownership is taken if dynamic and set is successful).
  * @return true if successful, false on allocation failure or invalid input.
  */
 bool mvn_hmap_set_cstr(mvn_hmap_t *hmap, const char *key_cstr, mvn_val_t value)
 {
     if (key_cstr == NULL) {
-        mvn_val_free(&value); // Free value if key is invalid
+        mvn_val_free(&value); // Free value if key_cstr is invalid
         return false;
     }
     // Create an owned mvn_string_t from the C string
-    mvn_string_t *key = mvn_string_new(key_cstr);
-    if (key == NULL) {
+    mvn_string_t *key_obj = mvn_string_new(key_cstr);
+    if (key_obj == NULL) {
         mvn_val_free(&value); // Free value if key allocation fails
         return false;         // Failed to create key string
     }
-    // Call the primary set function, which will take ownership of the created key
-    return mvn_hmap_set(hmap, key, value);
+
+    // Call the primary set function
+    bool success = mvn_hmap_set(hmap, key_obj, value);
+
+    if (!success) {
+        // If mvn_hmap_set failed, we need to ensure key_obj is freed if mvn_hmap_set
+        // did not take ownership or free it.
+        // Specifically, if hmap was NULL, mvn_hmap_set returns false
+        // without freeing key_obj.
+        // If hmap was valid but mvn_hmap_set failed internally (e.g. alloc error),
+        // mvn_hmap_set is responsible for freeing key_obj.
+        // If hmap was valid and it was a successful replacement, mvn_hmap_set also frees key_obj.
+        if (hmap == NULL) {
+            mvn_string_free(key_obj);
+        }
+    }
+    // If success and it was a new key insertion, mvn_hmap_set took ownership of key_obj.
+    return success;
 }
 
 /**
