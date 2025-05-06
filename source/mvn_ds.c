@@ -715,27 +715,27 @@ mvn_val_t mvn_val_null(void)
 /** @brief Creates a boolean value. */
 mvn_val_t mvn_val_bool(bool b)
 {
-    return (mvn_val_t){.type = MVN_VAL_BOOL, .b = b}; // No .as
+    return (mvn_val_t){.type = MVN_VAL_BOOL, .b = b};
 }
 /** @brief Creates a 32-bit integer value. */
 mvn_val_t mvn_val_i32(int32_t i32)
 {
-    return (mvn_val_t){.type = MVN_VAL_I32, .i32 = i32}; // No .as
+    return (mvn_val_t){.type = MVN_VAL_I32, .i32 = i32};
 }
 /** @brief Creates a 64-bit integer value. */
 mvn_val_t mvn_val_i64(int64_t i64)
 {
-    return (mvn_val_t){.type = MVN_VAL_I64, .i64 = i64}; // No .as
+    return (mvn_val_t){.type = MVN_VAL_I64, .i64 = i64};
 }
 /** @brief Creates a 32-bit float value. */
 mvn_val_t mvn_val_f32(float f32)
 {
-    return (mvn_val_t){.type = MVN_VAL_F32, .f32 = f32}; // No .as
+    return (mvn_val_t){.type = MVN_VAL_F32, .f32 = f32};
 }
 /** @brief Creates a 64-bit double value. */
 mvn_val_t mvn_val_f64(double f64)
 {
-    return (mvn_val_t){.type = MVN_VAL_F64, .f64 = f64}; // No .as
+    return (mvn_val_t){.type = MVN_VAL_F64, .f64 = f64};
 }
 
 /** @brief Creates a value owning a new string copied from a C string. */
@@ -743,8 +743,8 @@ mvn_val_t mvn_val_string(const char *chars)
 {
     mvn_string_t *s = mvn_string_new(chars);
     if (!s)
-        return mvn_val_null();                            // Handle allocation failure
-    return (mvn_val_t){.type = MVN_VAL_STRING, .str = s}; // No .as
+        return mvn_val_null(); // Handle allocation failure
+    return (mvn_val_t){.type = MVN_VAL_STRING, .str = s};
 }
 
 /** @brief Creates a value taking ownership of an existing string. */
@@ -752,7 +752,7 @@ mvn_val_t mvn_val_string_take(mvn_string_t *str)
 {
     if (!str)
         return mvn_val_null();
-    return (mvn_val_t){.type = MVN_VAL_STRING, .str = str}; // No .as
+    return (mvn_val_t){.type = MVN_VAL_STRING, .str = str};
 }
 
 /** @brief Creates a value owning a new empty array. */
@@ -760,8 +760,8 @@ mvn_val_t mvn_val_array(void)
 {
     mvn_array_t *a = mvn_array_new();
     if (!a)
-        return mvn_val_null();                           // Handle allocation failure
-    return (mvn_val_t){.type = MVN_VAL_ARRAY, .arr = a}; // No .as
+        return mvn_val_null(); // Handle allocation failure
+    return (mvn_val_t){.type = MVN_VAL_ARRAY, .arr = a};
 }
 
 /** @brief Creates a value taking ownership of an existing array. */
@@ -769,7 +769,7 @@ mvn_val_t mvn_val_array_take(mvn_array_t *arr)
 {
     if (!arr)
         return mvn_val_null();
-    return (mvn_val_t){.type = MVN_VAL_ARRAY, .arr = arr}; // No .as
+    return (mvn_val_t){.type = MVN_VAL_ARRAY, .arr = arr};
 }
 
 /** @brief Creates a value owning a new empty hash map. */
@@ -777,8 +777,8 @@ mvn_val_t mvn_val_hmap(void)
 {
     mvn_hmap_t *m = mvn_hmap_new();
     if (!m)
-        return mvn_val_null();                              // Handle allocation failure
-    return (mvn_val_t){.type = MVN_VAL_HASHMAP, .hmap = m}; // No .as
+        return mvn_val_null(); // Handle allocation failure
+    return (mvn_val_t){.type = MVN_VAL_HASHMAP, .hmap = m};
 }
 
 /** @brief Creates a value taking ownership of an existing hash map. */
@@ -786,7 +786,7 @@ mvn_val_t mvn_val_hmap_take(mvn_hmap_t *hmap)
 {
     if (!hmap)
         return mvn_val_null();
-    return (mvn_val_t){.type = MVN_VAL_HASHMAP, .hmap = hmap}; // No .as
+    return (mvn_val_t){.type = MVN_VAL_HASHMAP, .hmap = hmap};
 }
 
 /**
@@ -908,5 +908,3 @@ void mvn_val_print(const mvn_val_t *value)
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
-
-#endif // MVN_DS_C

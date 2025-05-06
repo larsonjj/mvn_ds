@@ -6,12 +6,12 @@ extern "C" {
 #endif /* __cplusplus */
 
 /**
- * \brief           Run all primitives tests
+ * \brief           Run all string tests
  * \param[out]      passed: Pointer to integer to increment for passed tests
  * \param[out]      failed: Pointer to integer to increment for failed tests
  * \param[out]      total: Pointer to integer to increment for total tests run
  */
-void run_primitives_tests(int *passed, int *failed, int *total);
+int run_string_tests(int *passed, int *failed, int *total);
 
 #ifdef __cplusplus
 }
