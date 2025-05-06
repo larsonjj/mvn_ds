@@ -365,6 +365,56 @@ static bool test_hmap_mvn_string_keys(void)
     return true;         // Test passed
 }
 
+/**
+ * @brief Tests freeing a NULL hash map pointer.
+ */
+static bool test_hmap_free_null(void)
+{
+    mvn_hmap_free(NULL); // Should not crash or cause issues
+    return true;         // Test passed if it doesn't crash
+}
+
+/**
+ * @brief Tests setting, getting, and deleting using an empty string key.
+ */
+static bool test_hmap_empty_string_key(void)
+{
+    mvn_hmap_t *hmap = mvn_hmap_new();
+    TEST_ASSERT(hmap != NULL, "Failed to create hash map for empty string key test");
+
+    // Set with empty string key
+    bool set_ok = mvn_hmap_set_cstr(hmap, "", mvn_val_i32(123));
+    TEST_ASSERT(set_ok, "Setting with empty string key failed");
+    TEST_ASSERT(hmap->count == 1, "Count should be 1 after setting empty string key");
+
+    // Get with empty string key
+    mvn_val_t *val = mvn_hmap_get_cstr(hmap, "");
+    TEST_ASSERT(val != NULL && val->type == MVN_VAL_I32 && val->i32 == 123,
+                "Getting with empty string key failed or value mismatch");
+
+    // Set another key to ensure delete doesn't break things
+    set_ok = mvn_hmap_set_cstr(hmap, "other", mvn_val_bool(true));
+    TEST_ASSERT(set_ok, "Setting 'other' key failed");
+    TEST_ASSERT(hmap->count == 2, "Count should be 2");
+
+    // Delete empty string key
+    bool delete_ok = mvn_hmap_delete_cstr(hmap, "");
+    TEST_ASSERT(delete_ok, "Deleting empty string key failed");
+    TEST_ASSERT(hmap->count == 1, "Count should be 1 after deleting empty string key");
+
+    // Verify empty string key is gone
+    val = mvn_hmap_get_cstr(hmap, "");
+    TEST_ASSERT(val == NULL, "Empty string key should be NULL after delete");
+
+    // Verify other key remains
+    val = mvn_hmap_get_cstr(hmap, "other");
+    TEST_ASSERT(val != NULL && val->type == MVN_VAL_BOOL && val->b == true,
+                "Other key retrieval failed after deleting empty string key");
+
+    mvn_hmap_free(hmap);
+    return true; // Test passed
+}
+
 // --- Test Runner ---
 
 /**
@@ -388,6 +438,8 @@ int run_hmap_tests(int *passed_tests, int *failed_tests, int *total_tests)
     RUN_TEST(test_hmap_ownership);
     RUN_TEST(test_hmap_collisions);
     RUN_TEST(test_hmap_mvn_string_keys);
+    RUN_TEST(test_hmap_free_null);        // Add new test run
+    RUN_TEST(test_hmap_empty_string_key); // Add new test run
 
     int tests_run = (*passed_tests - passed_before) + (*failed_tests - failed_before);
     (*total_tests) += tests_run;
