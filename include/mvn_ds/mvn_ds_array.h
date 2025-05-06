@@ -4,6 +4,8 @@
 #ifndef MVN_DS_ARRAY_H
 #define MVN_DS_ARRAY_H
 
+#include "mvn_ds_types.h" // Include the structure definitions
+
 #include <stdbool.h>
 #include <stddef.h>
 
@@ -12,24 +14,16 @@ extern "C" {
 #endif /* __cplusplus */
 
 // --- Forward Declarations ---
-// Forward declare mvn_val_t to avoid circular dependency with mvn_ds.h
-// The full definition is needed in the .c file.
-typedef struct mvn_val_t mvn_val_t;
+// No longer needed, included via mvn_ds_types.h
+// typedef struct mvn_val_t mvn_val_t;
 
 // --- Dynamic Array ---
-/**
- * @brief Structure representing a dynamic array of mvn_val_t values.
- */
-typedef struct mvn_array_t {
-    size_t     count;    /**< Number of elements currently in the array. */
-    size_t     capacity; /**< Allocated capacity of the value buffer. */
-    mvn_val_t *data;     /**< Pointer to the buffer holding mvn_val_t elements. */
-} mvn_array_t;
+// struct mvn_array_t is now defined in mvn_ds_types.h
 
 // --- Array Operations ---
 
 /**
- * @brief Creates a new, empty dynamic array with a default initial capacity.
+ * @brief Creates a new, empty dynamic array with a default initial capacity (0).
  * @return A pointer to the new mvn_array_t, or NULL on allocation failure.
  */
 mvn_array_t *mvn_array_new(void);

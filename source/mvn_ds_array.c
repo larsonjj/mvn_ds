@@ -13,12 +13,8 @@
 
 // --- Defines ---
 // These might be better placed in a shared internal header if used by more modules
-#ifndef MVN_INITIAL_CAPACITY
-#define MVN_INITIAL_CAPACITY 8
-#endif
-#ifndef MVN_GROWTH_FACTOR
-#define MVN_GROWTH_FACTOR 2
-#endif
+#define MVN_DS_ARRAY_INITIAL_CAPACITY 8
+#define MVN_DS_ARRAY_GROWTH_FACTOR    2
 
 // --- Internal Helper Functions ---
 
@@ -35,8 +31,9 @@ static bool mvn_array_ensure_capacity(mvn_array_t *array)
         return true; // Enough space
     }
     size_t old_capacity = array->capacity;
-    size_t new_capacity = old_capacity < MVN_INITIAL_CAPACITY ? MVN_INITIAL_CAPACITY :
-                                                                old_capacity * MVN_GROWTH_FACTOR;
+    size_t new_capacity = old_capacity < MVN_DS_ARRAY_INITIAL_CAPACITY ?
+                              MVN_DS_ARRAY_INITIAL_CAPACITY :
+                              old_capacity * MVN_DS_ARRAY_GROWTH_FACTOR;
 
     // Check for potential overflow during growth calculation
     if (new_capacity < old_capacity && old_capacity > 0) { // Check if overflow occurred
@@ -50,7 +47,7 @@ static bool mvn_array_ensure_capacity(mvn_array_t *array)
             return false;
         }
     } else if (new_capacity == 0 && old_capacity == 0) { // Handle initial allocation case
-        new_capacity = MVN_INITIAL_CAPACITY;
+        new_capacity = MVN_DS_ARRAY_INITIAL_CAPACITY;
     }
 
     // Check for overflow before calculating allocation size
@@ -114,8 +111,8 @@ mvn_array_t *mvn_array_new_with_capacity(size_t capacity)
 
 mvn_array_t *mvn_array_new(void)
 {
-    // Use 0 capacity initially, let first push allocate MVN_INITIAL_CAPACITY
-    return mvn_array_new_with_capacity(0);
+    // Use MVN_DS_ARRAY_INITIAL_CAPACITY by default
+    return mvn_array_new_with_capacity(MVN_DS_ARRAY_INITIAL_CAPACITY);
 }
 
 void mvn_array_free(mvn_array_t *array)

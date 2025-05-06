@@ -13,8 +13,8 @@
 
 // --- Defines ---
 // NOTE: These might be better placed in a shared internal header
-#define MVN_INITIAL_CAPACITY 8
-#define MVN_GROWTH_FACTOR    2
+#define MVN_DS_STRING_INITIAL_CAPACITY 8
+#define MVN_DS_STRING_GROWTH_FACTOR    2
 
 // --- Internal Helper Functions ---
 
@@ -41,12 +41,13 @@ static bool mvn_string_ensure_capacity(mvn_string_t *string, size_t additional_l
     }
 
     size_t old_capacity = string->capacity;
-    size_t new_capacity = old_capacity < MVN_INITIAL_CAPACITY ? MVN_INITIAL_CAPACITY :
-                                                                old_capacity * MVN_GROWTH_FACTOR;
+    size_t new_capacity = old_capacity < MVN_DS_STRING_INITIAL_CAPACITY ?
+                              MVN_DS_STRING_INITIAL_CAPACITY :
+                              old_capacity * MVN_DS_STRING_GROWTH_FACTOR;
     // Ensure the new capacity is at least what's required
     while (new_capacity <= required_capacity) {
         // Check for potential overflow during growth calculation
-        if (SIZE_MAX / MVN_GROWTH_FACTOR < new_capacity) {
+        if (SIZE_MAX / MVN_DS_STRING_GROWTH_FACTOR < new_capacity) {
             fprintf(stderr,
                     "[MVN_DS_STRING] String capacity overflow during resize calculation.\n");
             // Try setting to exactly required capacity if growth calculation overflows
@@ -57,7 +58,7 @@ static bool mvn_string_ensure_capacity(mvn_string_t *string, size_t additional_l
                 return false; // Cannot even allocate required capacity
             }
         }
-        new_capacity *= MVN_GROWTH_FACTOR;
+        new_capacity *= MVN_DS_STRING_GROWTH_FACTOR;
     }
 
     // +1 for null terminator
@@ -110,8 +111,9 @@ mvn_string_t *mvn_string_new(const char *chars)
     }
     size_t length = strlen(chars);
     // Start with at least initial capacity or required length
-    size_t        initial_capacity = length < MVN_INITIAL_CAPACITY ? MVN_INITIAL_CAPACITY : length;
-    mvn_string_t *string           = mvn_string_new_with_capacity(initial_capacity);
+    size_t initial_capacity =
+        length < MVN_DS_STRING_INITIAL_CAPACITY ? MVN_DS_STRING_INITIAL_CAPACITY : length;
+    mvn_string_t *string = mvn_string_new_with_capacity(initial_capacity);
     if (!string) {
         return NULL;
     }

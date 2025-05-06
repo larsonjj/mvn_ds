@@ -25,6 +25,7 @@ set(MVN_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/source/mvn_ds.c
     ${CMAKE_CURRENT_SOURCE_DIR}/source/mvn_ds_string.c
     ${CMAKE_CURRENT_SOURCE_DIR}/source/mvn_ds_array.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/source/mvn_ds_hmap.c
 )
 
 # Define library headers
@@ -32,7 +33,9 @@ set(MVN_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/include/mvn_ds/mvn_ds.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/mvn_ds/mvn_ds_string.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/mvn_ds/mvn_ds_array.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/mvn_ds/mvn_ds_hmap.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/mvn_ds/mvn_ds_utils.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/mvn_ds/mvn_ds_types.h
 )
 
 # Create library target
