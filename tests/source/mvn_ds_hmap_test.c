@@ -242,7 +242,7 @@ static bool test_hmap_ownership(void)
 }
 
 // Helper to force collisions by controlling the hash result (for testing only)
-// NOTE: This relies on internal knowledge/assumptions about mvn_string_hash.
+// NOTE: This relies on internal knowledge/assumptions about mvn_str_hash.
 // A more robust way might involve finding actual colliding strings or mocking.
 // For simplicity, let's assume we can find strings or use a very small map.
 static bool test_hmap_collisions(void)
@@ -307,18 +307,18 @@ static bool test_hmap_collisions(void)
     return true; // Test passed
 }
 
-static bool test_hmap_mvn_string_keys(void)
+static bool test_hmap_mvn_str_keys(void)
 {
     mvn_hmap_t *hmap = mvn_hmap_new();
-    TEST_ASSERT(hmap != NULL, "Failed to create hash map for mvn_string key test");
+    TEST_ASSERT(hmap != NULL, "Failed to create hash map for mvn_str key test");
 
-    // Create keys as mvn_string_t
-    mvn_string_t *key_one     = mvn_string_new("key_one_str");
-    mvn_string_t *key_two     = mvn_string_new("key_two_str");
-    mvn_string_t *key_one_dup = mvn_string_new("key_one_str"); // Same content, different object
+    // Create keys as mvn_str_t
+    mvn_str_t *key_one     = mvn_str_new("key_one_str");
+    mvn_str_t *key_two     = mvn_str_new("key_two_str");
+    mvn_str_t *key_one_dup = mvn_str_new("key_one_str"); // Same content, different object
 
     TEST_ASSERT(key_one != NULL && key_two != NULL && key_one_dup != NULL,
-                "Failed to create mvn_string keys");
+                "Failed to create mvn_str keys");
 
     // Set using mvn_hmap_set (takes ownership of key_one and key_two)
     bool set_ok = true;
@@ -351,7 +351,7 @@ static bool test_hmap_mvn_string_keys(void)
                 "Value not updated after replace with mvn_hmap_set");
 
     // Delete using mvn_hmap_delete
-    mvn_string_t *key_two_lookup = mvn_string_new("key_two_str"); // Create another lookup key
+    mvn_str_t *key_two_lookup = mvn_str_new("key_two_str"); // Create another lookup key
     TEST_ASSERT(key_two_lookup != NULL, "Failed to create lookup key for delete"); // Add check
     bool delete_ok = mvn_hmap_delete(hmap, key_two_lookup);
     TEST_ASSERT(delete_ok, "Delete using mvn_hmap_delete failed");
@@ -359,7 +359,7 @@ static bool test_hmap_mvn_string_keys(void)
     // val_two = mvn_hmap_get(hmap, key_two); // REMOVED: key_two pointer is invalid now
     // TEST_ASSERT(val_two == NULL, "Value should be NULL after mvn_hmap_delete"); // REMOVED
 
-    mvn_string_free(key_two_lookup); // Must free the lookup key manually
+    mvn_str_free(key_two_lookup); // Must free the lookup key manually
     // key_one, key_two, key_one_dup were handled by the map (set/delete)
 
     mvn_hmap_free(hmap); // Frees the remaining key ("key_one_str") and its value
@@ -421,7 +421,7 @@ static bool test_hmap_empty_string_key(void)
  */
 static bool test_hmap_operations_on_null_map(void)
 {
-    mvn_string_t *temp_key_str = mvn_string_new("anyKey");
+    mvn_str_t *temp_key_str = mvn_str_new("anyKey");
     TEST_ASSERT(temp_key_str != NULL, "Failed to create temp_key_str for NULL map test");
     mvn_val_t temp_value = mvn_val_i32(123);
 
@@ -447,7 +447,7 @@ static bool test_hmap_operations_on_null_map(void)
     delete_flag = mvn_hmap_delete_cstr(NULL, "anyKeyCstr");
     TEST_ASSERT(!delete_flag, "mvn_hmap_delete_cstr(NULL, key_cstr) should return false");
 
-    mvn_string_free(temp_key_str); // Clean up the temporary key
+    mvn_str_free(temp_key_str); // Clean up the temporary key
     // temp_value is primitive, no explicit free needed for its content here
 
     return true; // Test passed
@@ -466,13 +466,13 @@ static bool test_hmap_operations_with_null_key(void)
     mvn_val_t *got_val = mvn_hmap_get(hmap_ptr, NULL);
     TEST_ASSERT(got_val == NULL, "mvn_hmap_get(map, NULL) should return NULL");
 
-    // Test mvn_hmap_set with NULL key (mvn_string_t*)
+    // Test mvn_hmap_set with NULL key (mvn_str_t*)
     // This should fail as a NULL key cannot be processed.
     bool set_flag = mvn_hmap_set(hmap_ptr, NULL, temp_value);
     TEST_ASSERT(!set_flag, "mvn_hmap_set(map, NULL, val) should return false");
     TEST_ASSERT(hmap_ptr->count == 0, "Map count should be 0 after failed set with NULL key");
 
-    // Test mvn_hmap_delete with NULL key (mvn_string_t*)
+    // Test mvn_hmap_delete with NULL key (mvn_str_t*)
     bool delete_flag = mvn_hmap_delete(hmap_ptr, NULL);
     TEST_ASSERT(!delete_flag, "mvn_hmap_delete(map, NULL) should return false");
     TEST_ASSERT(hmap_ptr->count == 0, "Map count should be 0 after failed delete with NULL key");
@@ -518,7 +518,7 @@ int run_hmap_tests(int *passed_tests, int *failed_tests, int *total_tests)
     RUN_TEST(test_hmap_resize);
     RUN_TEST(test_hmap_ownership);
     RUN_TEST(test_hmap_collisions);
-    RUN_TEST(test_hmap_mvn_string_keys);
+    RUN_TEST(test_hmap_mvn_str_keys);
     RUN_TEST(test_hmap_free_null);                // Add new test run
     RUN_TEST(test_hmap_empty_string_key);         // Add new test run
     RUN_TEST(test_hmap_operations_on_null_map);   // Added

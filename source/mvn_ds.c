@@ -82,13 +82,13 @@ mvn_val_t mvn_val_f64(double f64)
 
 /**
  * @brief Creates a string value by copying a C string.
- * Allocates a new mvn_string_t internally.
+ * Allocates a new mvn_str_t internally.
  * @param chars The C string to copy. If NULL, creates an empty string value.
  * @return A mvn_val_t representing the string, or MVN_VAL_NULL on allocation failure.
  */
 mvn_val_t mvn_val_string(const char *chars)
 {
-    mvn_string_t *str = mvn_string_new(chars);
+    mvn_str_t *str = mvn_str_new(chars);
     if (!str) {
         return mvn_val_null(); // Handle allocation failure
     }
@@ -96,12 +96,12 @@ mvn_val_t mvn_val_string(const char *chars)
 }
 
 /**
- * @brief Creates a string value by taking ownership of an existing mvn_string_t.
+ * @brief Creates a string value by taking ownership of an existing mvn_str_t.
  * The provided string pointer will be managed by the mvn_val_t.
- * @param str The mvn_string_t to take ownership of. If NULL, creates a NULL value.
+ * @param str The mvn_str_t to take ownership of. If NULL, creates a NULL value.
  * @return A mvn_val_t representing the string.
  */
-mvn_val_t mvn_val_string_take(mvn_string_t *str)
+mvn_val_t mvn_val_string_take(mvn_str_t *str)
 {
     if (!str) {
         return mvn_val_null();
@@ -180,7 +180,7 @@ void mvn_val_free(mvn_val_t *value)
     switch (value->type) {
             // Dynamic types that need freeing:
         case MVN_VAL_STRING:
-            mvn_string_free(value->str); // Calls function from mvn_ds_string.c
+            mvn_str_free(value->str); // Calls function from mvn_ds_string.c
             break;
         case MVN_VAL_ARRAY:
             mvn_arr_free(value->arr); // Calls function from mvn_ds_arr.c
@@ -334,8 +334,8 @@ bool mvn_val_equal(const mvn_val_t *val_one, const mvn_val_t *val_two)
             // Use a small epsilon for double comparison
             return fabs(val_one->f64 - val_two->f64) < MVN_DS_DOUBLE_EPSILON;
         case MVN_VAL_STRING:
-            // Use mvn_string_equal, handles NULL internal data pointers
-            return mvn_string_equal(val_one->str, val_two->str);
+            // Use mvn_str_equal, handles NULL internal data pointers
+            return mvn_str_equal(val_one->str, val_two->str);
         case MVN_VAL_ARRAY: {
             mvn_arr_t *arr_one = val_one->arr;
             mvn_arr_t *arr_two = val_two->arr;

@@ -10,7 +10,7 @@
 
 // --- Forward Declarations ---
 // Forward declare all structs first to handle interdependencies
-typedef struct mvn_string_t     mvn_string_t;
+typedef struct mvn_str_t        mvn_str_t;
 typedef struct mvn_arr_t        mvn_arr_t;
 typedef struct mvn_hmap_entry_t mvn_hmap_entry_t;
 typedef struct mvn_hmap_t       mvn_hmap_t;
@@ -27,7 +27,7 @@ typedef enum {
     MVN_VAL_I64,    /**< Represents a 64-bit signed integer. */
     MVN_VAL_F32,    /**< Represents a 32-bit floating-point number. */
     MVN_VAL_F64,    /**< Represents a 64-bit floating-point number (double). */
-    MVN_VAL_STRING, /**< Represents an owned dynamic string (mvn_string_t*). */
+    MVN_VAL_STRING, /**< Represents an owned dynamic string (mvn_str_t*). */
     MVN_VAL_ARRAY,  /**< Represents an owned dynamic array (mvn_arr_t*). */
     MVN_VAL_HASHMAP /**< Represents an owned dynamic hash map (mvn_hmap_t*). */
 } mvn_val_type_t;
@@ -36,7 +36,7 @@ typedef enum {
 /**
  * @brief Structure representing a dynamic, null-terminated string.
  */
-struct mvn_string_t {
+struct mvn_str_t {
     size_t length;   /**< Current length of the string (excluding null terminator). */
     size_t capacity; /**< Allocated capacity of the data buffer (excluding null terminator). */
     char  *data;     /**< Pointer to the character buffer. Always null-terminated. */
@@ -50,16 +50,16 @@ struct mvn_string_t {
  * Owns the memory for MVN_VAL_STRING, MVN_VAL_ARRAY, and MVN_VAL_HASHMAP types.
  */
 struct mvn_val_t {
-    mvn_val_type_t type;    /**< The type of data currently held by the union. */
-    union {                 // Anonymous union
-        bool          b;    /**< Value if type is MVN_VAL_BOOL. */
-        int32_t       i32;  /**< Value if type is MVN_VAL_I32. */
-        int64_t       i64;  /**< Value if type is MVN_VAL_I64. */
-        float         f32;  /**< Value if type is MVN_VAL_F32. */
-        double        f64;  /**< Value if type is MVN_VAL_F64. */
-        mvn_string_t *str;  /**< Pointer to owned string if type is MVN_VAL_STRING. */
-        mvn_arr_t    *arr;  /**< Pointer to owned array if type is MVN_VAL_ARRAY. */
-        mvn_hmap_t   *hmap; /**< Pointer to owned hash map if type is MVN_VAL_HASHMAP. */
+    mvn_val_type_t type;  /**< The type of data currently held by the union. */
+    union {               // Anonymous union
+        bool        b;    /**< Value if type is MVN_VAL_BOOL. */
+        int32_t     i32;  /**< Value if type is MVN_VAL_I32. */
+        int64_t     i64;  /**< Value if type is MVN_VAL_I64. */
+        float       f32;  /**< Value if type is MVN_VAL_F32. */
+        double      f64;  /**< Value if type is MVN_VAL_F64. */
+        mvn_str_t  *str;  /**< Pointer to owned string if type is MVN_VAL_STRING. */
+        mvn_arr_t  *arr;  /**< Pointer to owned array if type is MVN_VAL_ARRAY. */
+        mvn_hmap_t *hmap; /**< Pointer to owned hash map if type is MVN_VAL_HASHMAP. */
     };
 };
 
@@ -80,7 +80,7 @@ struct mvn_arr_t {
  * Used internally for chaining.
  */
 struct mvn_hmap_entry_t {
-    mvn_string_t     *key;   /**< Owned key for the entry. */
+    mvn_str_t        *key;   /**< Owned key for the entry. */
     mvn_val_t         value; /**< Owned value for the entry. */
     mvn_hmap_entry_t *next;  /**< Pointer to the next entry in case of collision. */
 };

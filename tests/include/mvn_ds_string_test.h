@@ -1,5 +1,5 @@
-#ifndef MVN_DS_STRING_TEST_H
-#define MVN_DS_STRING_TEST_H
+#ifndef MVN_DS_STR_TEST_H
+#define MVN_DS_STR_TEST_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -17,4 +17,4 @@ int run_string_tests(int *passed, int *failed, int *total);
 }
 #endif /* __cplusplus */
 
-#endif /* MVN_DS_STRING_TEST_H */
+#endif /* MVN_DS_STR_TEST_H */

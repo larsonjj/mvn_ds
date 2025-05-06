@@ -215,8 +215,8 @@ static int test_array_ownership_free(void)
     mvn_arr_free(array);
 
     // Test freeing an array containing values taken via _take
-    array                   = mvn_arr_new();
-    mvn_string_t *taken_str = mvn_string_new("taken");
+    array                = mvn_arr_new();
+    mvn_str_t *taken_str = mvn_str_new("taken");
     mvn_arr_push(array, mvn_val_string_take(taken_str));
     mvn_arr_free(array); // Should free the taken string
 
@@ -252,8 +252,8 @@ static int test_array_ownership_set(void)
                 "Value mismatch after setting primitive type");
 
     // Set a dynamic value using _take over the primitive
-    mvn_string_t *taken_str = mvn_string_new("taken_set");
-    set_ok                  = mvn_arr_set(array, 0, mvn_val_string_take(taken_str));
+    mvn_str_t *taken_str = mvn_str_new("taken_set");
+    set_ok               = mvn_arr_set(array, 0, mvn_val_string_take(taken_str));
     TEST_ASSERT(set_ok, "Set with taken string failed");
     val = mvn_arr_get(array, 0);
     TEST_ASSERT(val != NULL && val->type == MVN_VAL_STRING && val->str == taken_str,
