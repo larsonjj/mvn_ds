@@ -6,7 +6,7 @@
 #include "mvn_ds/mvn_ds.h"
 #include "mvn_ds/mvn_ds_arr.h"  // For mvn_val_arr
 #include "mvn_ds/mvn_ds_hmap.h" // For mvn_val_hmap
-#include "mvn_ds/mvn_ds_str.h"  // For mvn_val_string_borrow
+#include "mvn_ds/mvn_ds_str.h"  // For mvn_val_str_borrow
 #include "mvn_ds_test_utils.h"
 
 #include <math.h>    // For fabsf, fabs
@@ -127,7 +127,7 @@ static bool test_additional_primitive_operations(void)
     printf("\nEnd of mvn_val_print(NULL) test.\n");
 
     mvn_val_t val_i32_sample  = mvn_val_i32(123);
-    mvn_val_t val_str_sample  = mvn_val_string("sample"); // Changed from mvn_val_string_borrow
+    mvn_val_t val_str_sample  = mvn_val_str("sample"); // Changed from mvn_val_str_borrow
     mvn_val_t val_arr_sample  = mvn_val_arr();
     mvn_val_t val_hmap_sample = mvn_val_hmap();
 
@@ -147,10 +147,10 @@ static bool test_additional_primitive_operations(void)
     TEST_ASSERT(!mvn_val_equal(&val_i32_sample, &val_hmap_sample), "I32 == Hmap should be false");
 
     // Clean up complex types if they were fully created (not just borrowed for string)
-    // If mvn_val_string_borrow was used, no free for val_str_sample.str
-    // If mvn_val_string was used, then mvn_string_free(val_str_sample.str) or
+    // If mvn_val_str_borrow was used, no free for val_str_sample.str
+    // If mvn_val_str was used, then mvn_string_free(val_str_sample.str) or
     // mvn_val_free(&val_str_sample)
-    mvn_val_free(&val_str_sample); // Frees the string if mvn_val_string created it
+    mvn_val_free(&val_str_sample); // Frees the string if mvn_val_str created it
     mvn_val_free(&val_arr_sample);
     mvn_val_free(&val_hmap_sample);
     // val_i32_sample is primitive, mvn_val_free just resets its type

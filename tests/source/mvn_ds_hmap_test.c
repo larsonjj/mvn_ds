@@ -59,7 +59,7 @@ static bool test_hmap_set_get_basic(void)
     bool set_ok = true;
     // Use mvn_hmap_set_cstr for convenience
     set_ok &= mvn_hmap_set_cstr(hmap, "key1", mvn_val_i32(100));
-    set_ok &= mvn_hmap_set_cstr(hmap, "key2", mvn_val_string("value2"));
+    set_ok &= mvn_hmap_set_cstr(hmap, "key2", mvn_val_str("value2"));
     set_ok &= mvn_hmap_set_cstr(hmap, "enabled", mvn_val_bool(true));
     set_ok &= mvn_hmap_set_cstr(hmap, "pi", mvn_val_f64(3.14159));
 
@@ -106,7 +106,7 @@ static bool test_hmap_set_replace(void)
     TEST_ASSERT(val != NULL && val->type == MVN_VAL_I32 && val->i32 == 1, "Initial get failed");
 
     // Replace the value with a different type
-    bool set_ok = mvn_hmap_set_cstr(hmap, "mykey", mvn_val_string("new_value"));
+    bool set_ok = mvn_hmap_set_cstr(hmap, "mykey", mvn_val_str("new_value"));
     TEST_ASSERT(set_ok, "Replacing value failed");
     TEST_ASSERT(hmap->count == 1, "Count should remain 1 after replace");
 
@@ -125,7 +125,7 @@ static bool test_hmap_delete(void)
     TEST_ASSERT(hmap != NULL, "Failed to create hash map for delete test");
 
     mvn_hmap_set_cstr(hmap, "key_to_delete", mvn_val_i32(42));
-    mvn_hmap_set_cstr(hmap, "key_to_keep", mvn_val_string("persistent"));
+    mvn_hmap_set_cstr(hmap, "key_to_keep", mvn_val_str("persistent"));
     TEST_ASSERT(hmap->count == 2, "Count should be 2 before delete");
 
     // Delete existing key
@@ -207,13 +207,13 @@ static bool test_hmap_ownership(void)
     // Create nested structures
     mvn_val_t inner_array_val = mvn_val_arr();
     mvn_arr_push(inner_array_val.arr, mvn_val_i32(1));
-    mvn_arr_push(inner_array_val.arr, mvn_val_string("nested_string"));
+    mvn_arr_push(inner_array_val.arr, mvn_val_str("nested_string"));
 
     mvn_val_t inner_hmap_val = mvn_val_hmap();
     mvn_hmap_set_cstr(inner_hmap_val.hmap, "inner_key", mvn_val_bool(false));
 
     // Set values in the main hash map (ownership transferred)
-    mvn_hmap_set_cstr(hmap, "outer_string", mvn_val_string("top_level"));
+    mvn_hmap_set_cstr(hmap, "outer_string", mvn_val_str("top_level"));
     mvn_hmap_set_cstr(hmap, "outer_array", inner_array_val);
     mvn_hmap_set_cstr(hmap, "outer_hmap", inner_hmap_val);
 
@@ -225,7 +225,7 @@ static bool test_hmap_ownership(void)
 
     // Test replacement ownership
     hmap = mvn_hmap_new();
-    mvn_hmap_set_cstr(hmap, "replace_me", mvn_val_string("initial"));
+    mvn_hmap_set_cstr(hmap, "replace_me", mvn_val_str("initial"));
     // This should free the "initial" string
     mvn_hmap_set_cstr(hmap, "replace_me", mvn_val_i32(99));
     mvn_hmap_free(hmap);

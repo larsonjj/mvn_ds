@@ -324,23 +324,22 @@ static bool test_string_hash(void)
 
 static bool test_string_val_integration(void)
 {
-    // Test mvn_val_string (creates and owns)
-    mvn_val_t val_str1 = mvn_val_string("value_one");
-    TEST_ASSERT(val_str1.type == MVN_VAL_STRING, "mvn_val_string type mismatch");
-    TEST_ASSERT(val_str1.str != NULL, "mvn_val_string internal string is NULL");
-    TEST_ASSERT(strcmp(val_str1.str->data, "value_one") == 0, "mvn_val_string content mismatch");
+    // Test mvn_val_str (creates and owns)
+    mvn_val_t val_str1 = mvn_val_str("value_one");
+    TEST_ASSERT(val_str1.type == MVN_VAL_STRING, "mvn_val_str type mismatch");
+    TEST_ASSERT(val_str1.str != NULL, "mvn_val_str internal string is NULL");
+    TEST_ASSERT(strcmp(val_str1.str->data, "value_one") == 0, "mvn_val_str content mismatch");
     mvn_val_free(&val_str1); // Should free the internal string
     TEST_ASSERT(val_str1.type == MVN_VAL_NULL, "mvn_val_free did not reset type for string");
     // Cannot check val_str1.str here as it's freed
 
-    // Test mvn_val_string_take (takes ownership)
+    // Test mvn_val_str_take (takes ownership)
     mvn_str_t *raw_str = mvn_str_new("value_two");
     TEST_ASSERT(raw_str != NULL, "Failed to create raw string for take test");
-    mvn_val_t val_str2 = mvn_val_string_take(raw_str);
-    TEST_ASSERT(val_str2.type == MVN_VAL_STRING, "mvn_val_string_take type mismatch");
-    TEST_ASSERT(val_str2.str == raw_str, "mvn_val_string_take pointer mismatch");
-    TEST_ASSERT(strcmp(val_str2.str->data, "value_two") == 0,
-                "mvn_val_string_take content mismatch");
+    mvn_val_t val_str2 = mvn_val_str_take(raw_str);
+    TEST_ASSERT(val_str2.type == MVN_VAL_STRING, "mvn_val_str_take type mismatch");
+    TEST_ASSERT(val_str2.str == raw_str, "mvn_val_str_take pointer mismatch");
+    TEST_ASSERT(strcmp(val_str2.str->data, "value_two") == 0, "mvn_val_str_take content mismatch");
     mvn_val_free(&val_str2); // Should free the taken string
     TEST_ASSERT(val_str2.type == MVN_VAL_NULL, "mvn_val_free did not reset type for taken string");
     // raw_str pointer is now dangling, do not use
@@ -350,7 +349,7 @@ static bool test_string_val_integration(void)
 
 static bool test_string_val_take_null(void)
 {
-    mvn_val_t val_null = mvn_val_string_take(NULL);
+    mvn_val_t val_null = mvn_val_str_take(NULL);
     TEST_ASSERT(val_null.type == MVN_VAL_NULL, "Taking NULL string should result in MVN_VAL_NULL");
     // No need to free val_null as it's NULL type
 

@@ -58,7 +58,7 @@ static int test_array_push_and_get(void)
     push_ok &= mvn_arr_push(array, mvn_val_i64(4567890123LL));
     push_ok &= mvn_arr_push(array, mvn_val_f32(3.14f));
     push_ok &= mvn_arr_push(array, mvn_val_f64(2.71828));
-    push_ok &= mvn_arr_push(array, mvn_val_string("hello"));
+    push_ok &= mvn_arr_push(array, mvn_val_str("hello"));
 
     TEST_ASSERT(push_ok, "Failed to push one or more values");
     TEST_ASSERT(array->count == 7, "Array count should be 7 after pushes");
@@ -109,12 +109,12 @@ static int test_array_set(void)
 
     // Push initial values
     mvn_arr_push(array, mvn_val_i32(1));
-    mvn_arr_push(array, mvn_val_string("original"));
+    mvn_arr_push(array, mvn_val_str("original"));
     mvn_arr_push(array, mvn_val_bool(false));
     TEST_ASSERT(array->count == 3, "Array count should be 3 initially");
 
     // Set value at index 1
-    bool set_ok = mvn_arr_set(array, 1, mvn_val_string("replaced"));
+    bool set_ok = mvn_arr_set(array, 1, mvn_val_str("replaced"));
     TEST_ASSERT(set_ok, "mvn_arr_set should return true for valid index");
     TEST_ASSERT(array->count == 3, "Array count should remain 3 after set");
 
@@ -193,17 +193,17 @@ static int test_array_ownership_free(void)
 
     // Push dynamic types
     bool push_ok = true;
-    push_ok &= mvn_arr_push(array, mvn_val_string("string1"));
+    push_ok &= mvn_arr_push(array, mvn_val_str("string1"));
     push_ok &= mvn_arr_push(array, mvn_val_arr());  // Push an empty array
     push_ok &= mvn_arr_push(array, mvn_val_hmap()); // Push an empty hmap
-    push_ok &= mvn_arr_push(array, mvn_val_string("string2"));
+    push_ok &= mvn_arr_push(array, mvn_val_str("string2"));
 
     // Add an element to the nested array to ensure deep free is tested
     mvn_val_t *nested_array_val = mvn_arr_get(array, 1);
     TEST_ASSERT(nested_array_val != NULL && nested_array_val->type == MVN_VAL_ARRAY,
                 "Failed to get nested array");
     if (nested_array_val && nested_array_val->type == MVN_VAL_ARRAY) {
-        push_ok &= mvn_arr_push(nested_array_val->arr, mvn_val_string("nested_string"));
+        push_ok &= mvn_arr_push(nested_array_val->arr, mvn_val_str("nested_string"));
     }
 
     TEST_ASSERT(push_ok, "Failed to push dynamic types for ownership test");
@@ -217,7 +217,7 @@ static int test_array_ownership_free(void)
     // Test freeing an array containing values taken via _take
     array                = mvn_arr_new();
     mvn_str_t *taken_str = mvn_str_new("taken");
-    mvn_arr_push(array, mvn_val_string_take(taken_str));
+    mvn_arr_push(array, mvn_val_str_take(taken_str));
     mvn_arr_free(array); // Should free the taken string
 
     return true; // Test passed (pending memory check)
@@ -229,12 +229,12 @@ static int test_array_ownership_set(void)
     TEST_ASSERT(array != NULL, "Failed to create array for set ownership test");
 
     // Push initial dynamic value
-    mvn_arr_push(array, mvn_val_string("original_string"));
+    mvn_arr_push(array, mvn_val_str("original_string"));
     TEST_ASSERT(array->count == 1, "Count should be 1");
 
     // Set a new dynamic value over the old one
     // The old "original_string" should be freed by mvn_arr_set.
-    bool set_ok = mvn_arr_set(array, 0, mvn_val_string("new_string"));
+    bool set_ok = mvn_arr_set(array, 0, mvn_val_str("new_string"));
     TEST_ASSERT(set_ok, "Set with dynamic type failed");
     TEST_ASSERT(array->count == 1, "Count should remain 1 after set");
     mvn_val_t *val = mvn_arr_get(array, 0);
@@ -253,7 +253,7 @@ static int test_array_ownership_set(void)
 
     // Set a dynamic value using _take over the primitive
     mvn_str_t *taken_str = mvn_str_new("taken_set");
-    set_ok               = mvn_arr_set(array, 0, mvn_val_string_take(taken_str));
+    set_ok               = mvn_arr_set(array, 0, mvn_val_str_take(taken_str));
     TEST_ASSERT(set_ok, "Set with taken string failed");
     val = mvn_arr_get(array, 0);
     TEST_ASSERT(val != NULL && val->type == MVN_VAL_STRING && val->str == taken_str,
@@ -323,7 +323,7 @@ static bool test_array_set_primitive_replacement(void)
     TEST_ASSERT(array->count == 2, "Count should remain 2"); // Ensure count doesn't change
 
     // 2. Set dynamic over primitive
-    set_ok = mvn_arr_set(array, 1, mvn_val_string("dynamic"));
+    set_ok = mvn_arr_set(array, 1, mvn_val_str("dynamic"));
     TEST_ASSERT(set_ok, "Set dynamic over primitive failed");
     val = mvn_arr_get(array, 1);
     TEST_ASSERT(val != NULL && val->type == MVN_VAL_STRING && val->str != NULL &&
@@ -363,7 +363,7 @@ static bool test_array_set_null_over_dynamic(void)
     TEST_ASSERT(array_ptr != NULL, "Failed to create array for set NULL over dynamic test");
 
     // Push a dynamic value (string)
-    bool push_ok = mvn_arr_push(array_ptr, mvn_val_string("to_be_freed"));
+    bool push_ok = mvn_arr_push(array_ptr, mvn_val_str("to_be_freed"));
     TEST_ASSERT(push_ok, "Pushing initial string failed");
     TEST_ASSERT(array_ptr->count == 1, "Count should be 1 after push");
 

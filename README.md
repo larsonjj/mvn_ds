@@ -116,7 +116,7 @@ Example (basic mvn_val_t usage):
 
 int main() {
     mvn_val_t val_int = mvn_val_i32(123);
-    mvn_val_t val_message = mvn_val_string("This is a test message.");
+    mvn_val_t val_message = mvn_val_str("This is a test message.");
 
     if (val_int.type == MVN_VAL_I32) {
         printf("Integer value: %d\n", val_int.i32);

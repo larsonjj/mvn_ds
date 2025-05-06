@@ -86,7 +86,7 @@ mvn_val_t mvn_val_f64(double f64)
  * @param chars The C string to copy. If NULL, creates an empty string value.
  * @return A mvn_val_t representing the string, or MVN_VAL_NULL on allocation failure.
  */
-mvn_val_t mvn_val_string(const char *chars)
+mvn_val_t mvn_val_str(const char *chars)
 {
     mvn_str_t *str = mvn_str_new(chars);
     if (!str) {
@@ -101,7 +101,7 @@ mvn_val_t mvn_val_string(const char *chars)
  * @param str The mvn_str_t to take ownership of. If NULL, creates a NULL value.
  * @return A mvn_val_t representing the string.
  */
-mvn_val_t mvn_val_string_take(mvn_str_t *str)
+mvn_val_t mvn_val_str_take(mvn_str_t *str)
 {
     if (!str) {
         return mvn_val_null();
