@@ -333,20 +333,20 @@ mvn_val_t *mvn_hmap_get_cstr(const mvn_hmap_t *hmap, const char *key_cstr)
         return NULL;
     }
 
-    // Create a temporary mvn_string_t for lookup (stack allocation might be complex)
-    // A heap allocation is simpler but less efficient for just a lookup.
-    // Alternative: Modify find_entry to accept cstr directly (adds complexity).
-    // Let's stick to creating a temporary string for now.
-    mvn_string_t temp_key;
-    temp_key.data   = (char *)key_cstr; // Cast away const for struct compatibility
-    temp_key.length = strlen(key_cstr);
-    // Capacity doesn't matter for hashing/equality checks
+    // Create a temporary heap-allocated key for lookup
+    mvn_string_t *temp_key_ptr = mvn_string_new(key_cstr);
+    if (temp_key_ptr == NULL) {
+        fprintf(stderr, "[MVN_DS_HMAP] Failed to allocate temporary key for get_cstr.\n");
+        return NULL; // Allocation failure
+    }
 
-    uint32_t hash_value = mvn_string_hash(&temp_key);
+    uint32_t hash_value = mvn_string_hash(temp_key_ptr);
     size_t   index      = hash_value % hmap->capacity;
 
     mvn_hmap_entry_t *entry =
-        mvn_hmap_find_entry(hmap->buckets[index], &temp_key, hash_value, NULL);
+        mvn_hmap_find_entry(hmap->buckets[index], temp_key_ptr, hash_value, NULL);
+
+    mvn_string_free(temp_key_ptr); // Free the temporary key
 
     return (entry != NULL) ? &entry->value : NULL;
 }
@@ -406,12 +406,17 @@ bool mvn_hmap_delete_cstr(mvn_hmap_t *hmap, const char *key_cstr)
         return false;
     }
 
-    // Create a temporary mvn_string_t for lookup
-    mvn_string_t temp_key;
-    temp_key.data   = (char *)key_cstr;
-    temp_key.length = strlen(key_cstr);
+    // Create a temporary heap-allocated key for lookup
+    mvn_string_t *temp_key_ptr = mvn_string_new(key_cstr);
+    if (temp_key_ptr == NULL) {
+        fprintf(stderr, "[MVN_DS_HMAP] Failed to allocate temporary key for delete_cstr.\n");
+        return false; // Allocation failure
+    }
 
-    // Call the primary delete function
-    // Note: This relies on mvn_hmap_delete comparing keys by content, not pointer.
-    return mvn_hmap_delete(hmap, &temp_key);
+    // Call the primary delete function using the temporary key
+    bool deleted = mvn_hmap_delete(hmap, temp_key_ptr);
+
+    mvn_string_free(temp_key_ptr); // Free the temporary key
+
+    return deleted;
 }
