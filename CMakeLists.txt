@@ -55,6 +55,7 @@ target_include_directories(mvn_ds
 if(MSVC)
     target_compile_options(mvn_ds PRIVATE
         /W4
+        /wd4201  # Disable warning C4201 (nameless struct/union)
         /wd4312  # Disable warning C4312 (conversion to larger size)
         $<$<BOOL:${MVN_DS_WARNINGS_AS_ERRORS}>:/WX>)
 
