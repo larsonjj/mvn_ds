@@ -8,17 +8,17 @@
 
 int main()
 {
-    mvn_string_t *test_string = mvn_string_new("Hello from C++"); // Call a C function
+    mvn_str_t *test_string = mvn_str_new("Hello from C++"); // Call a C function
 
     if (test_string == NULL) {
-        std::cerr << "Failed to create mvn_string from C++" << std::endl;
+        std::cerr << "Failed to create mvn_str from C++" << std::endl;
         return EXIT_FAILURE;
     }
 
-    std::cout << "Successfully created mvn_string: " << test_string->data
+    std::cout << "Successfully created mvn_str: " << test_string->data
               << std::endl; // Changed cstr to data
 
-    mvn_string_free(test_string); // Call another C function
+    mvn_str_free(test_string); // Call another C function
 
     return EXIT_SUCCESS;
 }

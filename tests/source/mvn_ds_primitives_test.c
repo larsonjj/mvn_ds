@@ -414,7 +414,7 @@ static bool test_additional_primitive_operations(void)
 
     // Clean up complex types if they were fully created (not just borrowed for string)
     // If mvn_val_str_borrow was used, no free for val_str_sample.str
-    // If mvn_val_str was used, then mvn_string_free(val_str_sample.str) or
+    // If mvn_val_str was used, then mvn_str_free(val_str_sample.str) or
     // mvn_val_free(&val_str_sample)
     mvn_val_free(&val_str_sample); // Frees the string if mvn_val_str created it
     mvn_val_free(&val_arr_sample);
