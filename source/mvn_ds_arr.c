@@ -1,9 +1,8 @@
 /*
  * Copyright (c) 2024 Jake Larson
  */
-#include "mvn_ds/mvn_ds_array.h"
-
-#include "mvn_ds/mvn_ds.h"       // Provides mvn_val_null, mvn_val_free
+#include "mvn_ds/mvn_ds.h" // Provides mvn_val_null, mvn_val_free
+#include "mvn_ds/mvn_ds_arr.h"
 #include "mvn_ds/mvn_ds_utils.h" // Provides memory macros (MVN_DS_*)
 
 #include <assert.h>

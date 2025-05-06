@@ -4,7 +4,7 @@
 #include "mvn_ds_primitives_test.h"
 
 #include "mvn_ds/mvn_ds.h"
-#include "mvn_ds/mvn_ds_array.h"  // For mvn_val_arr
+#include "mvn_ds/mvn_ds_arr.h"    // For mvn_val_arr
 #include "mvn_ds/mvn_ds_hmap.h"   // For mvn_val_hmap
 #include "mvn_ds/mvn_ds_string.h" // For mvn_val_string_borrow
 #include "mvn_ds_test_utils.h"

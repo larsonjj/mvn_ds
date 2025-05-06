@@ -23,7 +23,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(MVN_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/source/mvn_ds.c
     ${CMAKE_CURRENT_SOURCE_DIR}/source/mvn_ds_string.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/source/mvn_ds_array.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/source/mvn_ds_arr.c
     ${CMAKE_CURRENT_SOURCE_DIR}/source/mvn_ds_hmap.c
 )
 
@@ -31,7 +31,7 @@ set(MVN_SOURCES
 set(MVN_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/include/mvn_ds/mvn_ds.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/mvn_ds/mvn_ds_string.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/mvn_ds/mvn_ds_array.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/mvn_ds/mvn_ds_arr.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/mvn_ds/mvn_ds_hmap.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/mvn_ds/mvn_ds_utils.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/mvn_ds/mvn_ds_types.h

@@ -7,7 +7,7 @@
 #include "mvn_ds_types.h" // Include all structure definitions
 
 // Include component function declarations
-#include "mvn_ds_array.h"
+#include "mvn_ds_arr.h"
 #include "mvn_ds_hmap.h"
 #include "mvn_ds_string.h"
 

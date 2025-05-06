@@ -18,7 +18,7 @@ endfunction()
 ##### TEST CONFIGURATION #####
 # List of all test modules
 set(MVN_DS_TEST_MODULES
-    array
+    arr
     hmap
     primitives
     string

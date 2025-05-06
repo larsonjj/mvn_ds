@@ -183,7 +183,7 @@ void mvn_val_free(mvn_val_t *value)
             mvn_string_free(value->str); // Calls function from mvn_ds_string.c
             break;
         case MVN_VAL_ARRAY:
-            mvn_arr_free(value->arr); // Calls function from mvn_ds_array.c
+            mvn_arr_free(value->arr); // Calls function from mvn_ds_arr.c
             break;
         case MVN_VAL_HASHMAP:
             mvn_hmap_free(value->hmap); // Calls function from mvn_ds_hmap.c

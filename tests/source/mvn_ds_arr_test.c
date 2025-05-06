@@ -1,9 +1,8 @@
 /*
  * Copyright (c) 2024 Jake Larson
  */
-#include "mvn_ds_array_test.h"
-
 #include "mvn_ds/mvn_ds.h"
+#include "mvn_ds_arr_test.h"
 #include "mvn_ds_test_utils.h"
 
 #include <math.h>    // For fabsf, fabs
