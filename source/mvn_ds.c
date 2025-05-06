@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Jake Larson
+ * Copyright (c) 2025 Jake Larson
  */
 #include "mvn_ds/mvn_ds.h" // Includes string, array, and hmap headers now
 
@@ -7,12 +7,17 @@
 
 #include <assert.h>   // For basic assertions (if any remain)
 #include <inttypes.h> // For PRI macros like PRId64 (used in mvn_val_print)
+#include <math.h>     // For fabs, fabsf in equality checks
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h> // For int32_t, int64_t etc.
 #include <stdio.h>  // For printf (used in mvn_val_print)
 #include <stdlib.h> // For SIZE_MAX (if any remain)
 #include <string.h> // For strlen (if any remain)
+
+// Define epsilon values for floating-point comparisons
+#define MVN_DS_FLOAT_EPSILON  1e-6f
+#define MVN_DS_DOUBLE_EPSILON 1e-14
 
 // --- Value Implementation ---
 
@@ -286,5 +291,127 @@ void mvn_val_print(const mvn_val_t *value)
         default:
             printf("UNKNOWN_TYPE(%d)", value->type);
             break;
+    }
+}
+
+/**
+ * @brief Compares two mvn_val_t values for equality.
+ * Handles different types and performs deep comparison for dynamic types.
+ * For floating-point types (F32, F64), uses a small epsilon for comparison.
+ * @param val_one Pointer to the first value.
+ * @param val_two Pointer to the second value.
+ * @return true if the values are considered equal, false otherwise.
+ */
+bool mvn_val_equal(const mvn_val_t *val_one, const mvn_val_t *val_two)
+{
+    // Handle NULL pointers: two NULL pointers are equal, one NULL is not.
+    if (!val_one && !val_two) {
+        return true;
+    }
+    if (!val_one || !val_two) {
+        return false;
+    }
+
+    // If types differ, they are not equal.
+    if (val_one->type != val_two->type) {
+        return false;
+    }
+
+    // Compare based on type
+    switch (val_one->type) {
+        case MVN_VAL_NULL:
+            return true; // NULL is always equal to NULL
+        case MVN_VAL_BOOL:
+            return val_one->b == val_two->b;
+        case MVN_VAL_I32:
+            return val_one->i32 == val_two->i32;
+        case MVN_VAL_I64:
+            return val_one->i64 == val_two->i64;
+        case MVN_VAL_F32:
+            // Use a small epsilon for float comparison
+            return fabsf(val_one->f32 - val_two->f32) < MVN_DS_FLOAT_EPSILON;
+        case MVN_VAL_F64:
+            // Use a small epsilon for double comparison
+            return fabs(val_one->f64 - val_two->f64) < MVN_DS_DOUBLE_EPSILON;
+        case MVN_VAL_STRING:
+            // Use mvn_string_equal, handles NULL internal data pointers
+            return mvn_string_equal(val_one->str, val_two->str);
+        case MVN_VAL_ARRAY: {
+            mvn_array_t *arr_one = val_one->arr;
+            mvn_array_t *arr_two = val_two->arr;
+
+            // Handle NULL array pointers within the value
+            if (!arr_one && !arr_two) {
+                return true;
+            }
+            if (!arr_one || !arr_two) {
+                return false;
+            }
+            if (arr_one->count != arr_two->count) {
+                return false;
+            }
+            // Check data pointers before iterating
+            if (!arr_one->data && !arr_two->data && arr_one->count == 0) {
+                return true; // Both empty and potentially NULL data
+            }
+            if (!arr_one->data || !arr_two->data) {
+                return false; // One has data, the other doesn't (and count > 0)
+            }
+
+            // Recursively compare elements
+            for (size_t index = 0; index < arr_one->count; index++) {
+                if (!mvn_val_equal(&arr_one->data[index], &arr_two->data[index])) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        case MVN_VAL_HASHMAP: {
+            mvn_hmap_t *map_one = val_one->hmap;
+            mvn_hmap_t *map_two = val_two->hmap;
+
+            // Handle NULL map pointers within the value
+            if (!map_one && !map_two) {
+                return true;
+            }
+            if (!map_one || !map_two) {
+                return false;
+            }
+            if (map_one->count != map_two->count) {
+                return false;
+            }
+            if (map_one->count == 0) {
+                return true; // Both are empty
+            }
+            // Check buckets pointers before iterating
+            if (!map_one->buckets || !map_two->buckets) {
+                // This case should ideally not happen if count > 0, but check defensively
+                return false;
+            }
+
+            // Iterate through the first map and check against the second
+            for (size_t index = 0; index < map_one->capacity; index++) {
+                mvn_hmap_entry_t *entry_one = map_one->buckets[index];
+                while (entry_one) {
+                    // Find the corresponding key in the second map
+                    mvn_val_t *found_val_two = mvn_hmap_get(map_two, entry_one->key);
+                    if (!found_val_two) {
+                        return false; // Key not found in the second map
+                    }
+                    // Recursively compare the values
+                    if (!mvn_val_equal(&entry_one->value, found_val_two)) {
+                        return false; // Values for the same key are different
+                    }
+                    entry_one = entry_one->next;
+                }
+            }
+            return true; // All keys and values matched
+        }
+        default:
+            // Should not happen if all types are handled
+            fprintf(stderr,
+                    "[MVN_DS] Warning: mvn_val_equal called on unknown type %d\n",
+                    val_one->type);
+            return false;
     }
 }

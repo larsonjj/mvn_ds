@@ -42,6 +42,9 @@ void mvn_val_free(mvn_val_t *value);
 // Prints a representation of the value to stdout (for debugging).
 void mvn_val_print(const mvn_val_t *value);
 
+// Compares two mvn_val_t values for equality.
+bool mvn_val_equal(const mvn_val_t *val_one, const mvn_val_t *val_two);
+
 // --- Component Operations ---
 // Declarations are now in their respective headers (mvn_ds_string.h, etc.)
 
