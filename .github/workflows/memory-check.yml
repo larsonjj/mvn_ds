@@ -1,0 +1,82 @@
+name: Memory Check
+
+on:
+    push:
+        branches: [main]
+    pull_request:
+        branches: [main]
+
+jobs:
+    valgrind:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Install dependencies
+              run: |
+                  sudo apt-get update
+                  sudo apt-get install -y valgrind libgl1-mesa-dev xorg-dev
+
+            - name: Configure CMake
+              run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=Debug -DMVN_BUILD_TESTS=ON -DMVN_BUILD_EXAMPLES=ON -DMVN_CI=ON
+
+            - name: Build
+              run: cmake --build ${{github.workspace}}/build --config Debug
+
+            - name: Run tests with Valgrind
+              working-directory: ${{github.workspace}}/build/tests
+              run: |
+                  # Find all test executables
+                  TEST_EXECUTABLES=$(find . -type f -executable -name "mvn_ds_test_*" -o -name "test_*")
+
+                  if [ -z "$TEST_EXECUTABLES" ]; then
+                    echo "No test executables found. Check test naming conventions."
+                    exit 1
+                  fi
+
+                  echo "Found test executables: $TEST_EXECUTABLES"
+
+                  # Run Valgrind on each test executable
+                  for test in $TEST_EXECUTABLES; do
+                    echo "Running Valgrind on $test"
+                    valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes --verbose --error-exitcode=1 "$test"
+                  done
+
+            - name: Run examples with Valgrind (if applicable)
+              working-directory: ${{github.workspace}}/build/examples
+              run: |
+                  mkdir -p reports
+                  for example in mvn_example_*; do
+                    if [ -x "$example" ]; then
+                      echo "Running Valgrind on $example"
+                      # Run for a short time since examples might be interactive
+                      # Generate XML report for each example
+                      timeout 5 valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes --xml=yes --xml-file=reports/${example}-valgrind.xml ./$example || echo "Example timed out, which is expected for interactive programs"
+                    fi
+                  done
+
+            - name: Generate XML report for tests
+              working-directory: ${{github.workspace}}/build/tests
+              run: |
+                  mkdir -p reports
+                  # Use the first found test executable for XML report
+                  TEST_EXEC=$(find . -type f -executable -name "mvn_ds_test_*" -o -name "test_*" | head -1)
+                  if [ -n "$TEST_EXEC" ]; then
+                    echo "Generating XML report with $TEST_EXEC"
+                    valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes --xml=yes --xml-file=reports/tests-valgrind.xml "$TEST_EXEC" || true
+                  else
+                    echo "No test executable found for XML report generation"
+                    touch reports/tests-valgrind.xml  # Create empty file to prevent workflow failure
+                  fi
+
+            - name: Upload Valgrind test results
+              uses: actions/upload-artifact@v4
+              with:
+                  name: valgrind-test-results
+                  path: ${{github.workspace}}/build/tests/reports/*.xml
+
+            - name: Upload Valgrind example results
+              uses: actions/upload-artifact@v4
+              with:
+                  name: valgrind-example-results
+                  path: ${{github.workspace}}/build/examples/reports/*.xml

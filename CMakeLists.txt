@@ -7,9 +7,8 @@ project(mvn_ds
     LANGUAGES C)
 
 # Options
-option(MVN_BUILD_EXAMPLES "Build MVN_DS examples" ON)
-option(MVN_BUILD_TESTS "Build MVN_ds tests" ON)
-option(MVN_WARNINGS_AS_ERRORS "Treat compiler warnings as errors" ON)
+option(MVN_DS_BUILD_TESTS "Build MVN_ds tests" ON)
+option(MVN_DS_WARNINGS_AS_ERRORS "Treat compiler warnings as errors" ON)
 
 # Suppress developer warnings
 set(CMAKE_SUPPRESS_DEVELOPER_WARNINGS 1 CACHE BOOL "Suppress developer warnings" FORCE)
@@ -57,7 +56,7 @@ if(MSVC)
     target_compile_options(mvn_ds PRIVATE
         /W4
         /wd4312  # Disable warning C4312 (conversion to larger size)
-        $<$<BOOL:${MVN_WARNINGS_AS_ERRORS}>:/WX>)
+        $<$<BOOL:${MVN_DS_WARNINGS_AS_ERRORS}>:/WX>)
 
     if(NOT CMAKE_GENERATOR STREQUAL "Ninja")
         target_compile_options(mvn_ds PRIVATE /MP)
@@ -65,7 +64,7 @@ if(MSVC)
 else()
     target_compile_options(mvn_ds PRIVATE
         -Wall -Wextra -Wpedantic
-        $<$<BOOL:${MVN_WARNINGS_AS_ERRORS}>:-Werror>)
+        $<$<BOOL:${MVN_DS_WARNINGS_AS_ERRORS}>:-Werror>)
 endif()
 
 # Link against SDL3 and SDL3_image for build-time usage
@@ -120,7 +119,7 @@ install(FILES
 )
 
 # Process subdirectories if enabled
-if(MVN_BUILD_TESTS)
+if(MVN_DS_BUILD_TESTS)
     enable_testing()
     add_subdirectory(tests)
 endif()
