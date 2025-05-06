@@ -13,59 +13,29 @@
 extern "C" {
 #endif /* __cplusplus */
 
+// Default initial capacity for new arrays created with mvn_array_new()
 #define MVN_DS_ARRAY_INITIAL_CAPACITY 8
-#define MVN_DS_ARRAY_GROWTH_FACTOR    2
+// Factor by which the array capacity grows when resizing
+#define MVN_DS_ARRAY_GROWTH_FACTOR 2
 
 // --- Array Operations ---
 
-/**
- * @brief Creates a new, empty dynamic array with a default initial capacity (0).
- * @return A pointer to the new mvn_array_t, or NULL on allocation failure.
- */
+// Creates a new, empty dynamic array with a default initial capacity.
 mvn_array_t *mvn_array_new(void);
 
-/**
- * @brief Creates a new, empty dynamic array with a specific initial capacity.
- * @param capacity The initial capacity.
- * @return A pointer to the new mvn_array_t, or NULL on allocation failure.
- */
+// Creates a new, empty dynamic array with a specific initial capacity.
 mvn_array_t *mvn_array_new_with_capacity(size_t capacity);
 
-/**
- * @brief Frees the memory associated with a dynamic array, including all contained values.
- * @param array The array to free. Does nothing if NULL.
- */
+// Frees the memory associated with a dynamic array, including all contained values.
 void mvn_array_free(mvn_array_t *array);
 
-/**
- * @brief Appends a value to the end of the array.
- * The array takes ownership of the value if it's a dynamic type (STRING, ARRAY, HASHMAP).
- * Resizes the array if necessary.
- * @param array The array to append to. Must not be NULL.
- * @param value The value to append. Ownership is transferred to the array.
- * @return true if successful, false on allocation failure or invalid input.
- */
+// Appends a value to the end of the array, taking ownership if dynamic.
 bool mvn_array_push(mvn_array_t *array, mvn_val_t value);
 
-/**
- * @brief Retrieves a pointer to the value at a specific index.
- * Does not transfer ownership. Returns NULL if the index is out of bounds.
- * @param array The array to access.
- * @param index The index of the element to retrieve.
- * @return A pointer to the mvn_val_t at the index, or NULL if out of bounds.
- */
+// Retrieves a pointer to the value at a specific index (no ownership transfer).
 mvn_val_t *mvn_array_get(const mvn_array_t *array, size_t index);
 
-/**
- * @brief Sets the value at a specific index in the array.
- * Frees the existing value at the index before setting the new one.
- * The array takes ownership of the new value if it's a dynamic type.
- * @param array The array to modify. Must not be NULL.
- * @param index The index to set. Must be less than the array's count.
- * @param value The new value. Ownership is transferred to the array.
- * @return true if successful (index was valid), false otherwise (index out of bounds or invalid
- * input).
- */
+// Sets the value at a specific index, freeing the old value and taking ownership of the new.
 bool mvn_array_set(mvn_array_t *array, size_t index, mvn_val_t value);
 
 #ifdef __cplusplus

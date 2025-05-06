@@ -21,7 +21,7 @@
  * @param new_size Desired new size. If 0, frees the pointer.
  * @return Pointer to the reallocated memory, or NULL if new_size is 0 or allocation fails.
  */
-static void *mvn_reallocate_array(void *pointer, size_t new_size) // Renamed function
+static void *mvn_reallocate_array(void *pointer, size_t new_size)
 {
     // old_size is not needed for standard realloc
     if (new_size == 0) {
@@ -38,7 +38,7 @@ static void *mvn_reallocate_array(void *pointer, size_t new_size) // Renamed fun
 /**
  * @internal
  * @brief Ensures array has enough capacity, reallocating if necessary.
- * @param array The array to check/grow.
+ * @param array The array to check/grow. Must not be NULL.
  * @return true if successful (or no resize needed), false on allocation failure.
  */
 static bool mvn_array_ensure_capacity(mvn_array_t *array)
@@ -93,6 +93,11 @@ static bool mvn_array_ensure_capacity(mvn_array_t *array)
 
 // --- Array Implementation ---
 
+/**
+ * @brief Creates a new, empty dynamic array with a specific initial capacity.
+ * @param capacity The initial capacity. If 0, no initial buffer is allocated.
+ * @return A pointer to the new mvn_array_t, or NULL on allocation failure.
+ */
 mvn_array_t *mvn_array_new_with_capacity(size_t capacity)
 {
     mvn_array_t *array = (mvn_array_t *)MVN_DS_MALLOC(sizeof(mvn_array_t));
@@ -125,67 +130,94 @@ mvn_array_t *mvn_array_new_with_capacity(size_t capacity)
     return array;
 }
 
+/**
+ * @brief Creates a new, empty dynamic array with a default initial capacity.
+ * Uses MVN_DS_ARRAY_INITIAL_CAPACITY defined in the header.
+ * @return A pointer to the new mvn_array_t, or NULL on allocation failure.
+ */
 mvn_array_t *mvn_array_new(void)
 {
     // Use MVN_DS_ARRAY_INITIAL_CAPACITY by default
     return mvn_array_new_with_capacity(MVN_DS_ARRAY_INITIAL_CAPACITY);
 }
 
+/**
+ * @brief Frees the memory associated with a dynamic array, including all contained values.
+ * Iterates through the array elements and calls mvn_val_free on each one before
+ * freeing the data buffer and the array structure itself.
+ * @param array The array to free. Does nothing if NULL.
+ */
 void mvn_array_free(mvn_array_t *array)
 {
     if (!array) {
         return;
     }
-    // Free contained values first
-    // Iterate up to capacity because ensure_capacity initializes slots up to capacity
+    // Free contained values if data buffer exists
     if (array->data) {
-        for (size_t index = 0; index < array->capacity; index++) {
+        for (size_t index = 0; index < array->count; index++) {
             mvn_val_free(&array->data[index]);
         }
-        MVN_DS_FREE(array->data); // Free the value buffer
+        MVN_DS_FREE(array->data); // Free the data buffer
     }
-    MVN_DS_FREE(array); // Free the struct itself
+    MVN_DS_FREE(array); // Free the array struct itself
 }
 
+/**
+ * @brief Appends a value to the end of the array.
+ * The array takes ownership of the value if it's a dynamic type (STRING, ARRAY, HASHMAP).
+ * Resizes the array using mvn_array_ensure_capacity if necessary.
+ * @param array The array to append to. Must not be NULL.
+ * @param value The value to append. Ownership is transferred to the array.
+ * @return true if successful, false on allocation failure or invalid input.
+ */
 bool mvn_array_push(mvn_array_t *array, mvn_val_t value)
 {
     if (!array) {
-        // Cannot push to NULL array, free incoming value if needed
+        // If array is NULL, we cannot take ownership, so free the value if needed.
         mvn_val_free(&value);
         return false;
     }
     if (!mvn_array_ensure_capacity(array)) {
-        // If resize failed, we might own the value now but can't store it.
-        // Free it to prevent leaks.
+        // If resize fails, we cannot take ownership, so free the value if needed.
         mvn_val_free(&value);
         return false;
     }
-    // Place the value (transfers ownership)
-    // Ensure data is not NULL (should be handled by ensure_capacity)
-    assert(array->data != NULL || array->capacity == 0);
-    // If capacity was 0, ensure_capacity should have allocated data
-    assert(array->data != NULL || array->count == 0);
-
-    array->data[array->count++] = value;
+    // Place the value (transfers ownership) and increment count
+    array->data[array->count] = value;
+    array->count++;
     return true;
 }
 
+/**
+ * @brief Retrieves a pointer to the value at a specific index.
+ * Does not transfer ownership. Returns NULL if the index is out of bounds or array is NULL.
+ * @param array The array to access. Can be NULL.
+ * @param index The index of the element to retrieve.
+ * @return A pointer to the mvn_val_t at the index, or NULL if array is NULL or index is out of
+ * bounds.
+ */
 mvn_val_t *mvn_array_get(const mvn_array_t *array, size_t index)
 {
-    if (!array || !array->data || index >= array->count) {
+    if (!array || index >= array->count) {
         return NULL;
     }
-    // Const cast is generally acceptable here for returning a non-const pointer
-    // from a const structure pointer, assuming the caller respects const-correctness
-    // if they originally had a const mvn_array_t*.
-    return &((mvn_array_t *)array)->data[index];
+    return &array->data[index];
 }
 
+/**
+ * @brief Sets the value at a specific index in the array.
+ * Frees the existing value at the index before setting the new one.
+ * The array takes ownership of the new value if it's a dynamic type.
+ * @param array The array to modify. Must not be NULL.
+ * @param index The index to set. Must be less than the array's count.
+ * @param value The new value. Ownership is transferred to the array.
+ * @return true if successful (index was valid), false otherwise (index out of bounds or invalid
+ * input).
+ */
 bool mvn_array_set(mvn_array_t *array, size_t index, mvn_val_t value)
 {
-    if (!array || !array->data || index >= array->count) {
-        // Index out of bounds or invalid array/data.
-        // Free the incoming value as it won't be stored.
+    if (!array || index >= array->count) {
+        // If index is invalid, we cannot take ownership, so free the value if needed.
         mvn_val_free(&value);
         return false;
     }

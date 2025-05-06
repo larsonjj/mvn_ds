@@ -13,59 +13,60 @@
 #include <stdlib.h> // For SIZE_MAX
 #include <string.h> // For strlen
 
-// --- Internal Helper Functions ---
+// --- Static Helper Functions ---
 
 /**
  * @internal
- * @brief Finds the map entry for a given key.
- * @param buckets The bucket array.
- * @param capacity The capacity of the bucket array.
- * @param key The key to search for. Must not be NULL.
- * @param hash_value The precomputed hash of the key.
- * @return Pointer to the entry if found, NULL otherwise.
+ * @brief Finds an entry in a hash map bucket chain.
+ * @param head Head of the bucket's linked list.
+ * @param key The key to search for.
+ * @param hash The precomputed hash of the key.
+ * @param[out] prev Optional pointer to store the previous entry (for deletion).
+ * @return Pointer to the found entry, or NULL if not found.
  */
-static mvn_hmap_entry_t *mvn_hmap_find_entry(mvn_hmap_entry_t  **buckets,
-                                             size_t              capacity,
+static mvn_hmap_entry_t *mvn_hmap_find_entry(mvn_hmap_entry_t   *head,
                                              const mvn_string_t *key,
-                                             uint32_t            hash_value)
+                                             uint32_t            hash,
+                                             mvn_hmap_entry_t  **prev)
 {
-    // Assumes capacity > 0, buckets != NULL, key != NULL (checked by callers)
-    size_t            index = hash_value % capacity; // Simple modulo distribution
-    mvn_hmap_entry_t *entry = buckets[index];
-
-    // Traverse the linked list (chain) at this bucket index
-    while (entry != NULL) {
-        // Check hash first (quick check), then full string equality
-        // Ensure entry->key is not NULL before hashing/comparing
-        if (entry->key != NULL && mvn_string_hash(entry->key) == hash_value &&
-            mvn_string_equal(entry->key, key)) {
-            return entry; // Found it
-        }
-        entry = entry->next;
+    mvn_hmap_entry_t *current_entry = head;
+    if (prev) {
+        *prev = NULL;
     }
-    return NULL; // Not found
+    while (current_entry != NULL) {
+        // Optimization: Check hash first, then full key equality
+        if (current_entry->key != NULL && mvn_string_hash(current_entry->key) == hash &&
+            mvn_string_equal(current_entry->key, key)) {
+            return current_entry;
+        }
+        if (prev) {
+            *prev = current_entry;
+        }
+        current_entry = current_entry->next;
+    }
+    return NULL;
 }
 
 /**
  * @internal
  * @brief Resizes the hash map's bucket array and rehashes entries.
- * @param hmap The hash map to resize. Must not be NULL.
- * @param new_capacity The desired new capacity. Must be > 0.
- * @return true if resize was successful, false otherwise (e.g., allocation failure).
+ * @param hmap The hash map to resize.
+ * @param new_capacity The desired new capacity (must be > 0).
+ * @return true if successful, false on allocation failure.
  */
 static bool mvn_hmap_adjust_capacity(mvn_hmap_t *hmap, size_t new_capacity)
 {
     assert(hmap != NULL);
     assert(new_capacity > 0); // Should not be called with 0
 
-    // Allocate new bucket array, initialized to NULL
     // Check for overflow before calculating allocation size
     if (new_capacity > SIZE_MAX / sizeof(mvn_hmap_entry_t *)) {
-        fprintf(stderr, "[MVN_DS_HMAP] Hash map capacity overflow calculating allocation size.\n");
+        fprintf(stderr, "[MVN_DS_HMAP] Hash map resize capacity overflow.\n");
         return false;
     }
     size_t allocation_size = new_capacity * sizeof(mvn_hmap_entry_t *);
-    // Use CALLOC for zero-initialization
+
+    // Allocate new bucket array, initialized to NULL
     mvn_hmap_entry_t **new_buckets = (mvn_hmap_entry_t **)MVN_DS_CALLOC(1, allocation_size);
     if (new_buckets == NULL) {
         // Allocation failed, keep the old table. This is problematic.
@@ -90,26 +91,36 @@ static bool mvn_hmap_adjust_capacity(mvn_hmap_t *hmap, size_t new_capacity)
                 current_entry->next    = new_buckets[index_new];
                 new_buckets[index_new] = current_entry;
             } else {
-                // This case should ideally not happen if keys are always valid
-                fprintf(stderr, "[MVN_DS_HMAP] Warning: NULL key found during hash map resize.\n");
-                // Free the problematic entry to avoid leaks
+                // Handle case where key is somehow NULL (shouldn't happen if set correctly)
+                // Free the entry to avoid leaks, though this indicates a prior issue.
+                fprintf(stderr,
+                        "[MVN_DS_HMAP] Warning: Found entry with NULL key during resize.\n");
                 mvn_val_free(&current_entry->value);
                 MVN_DS_FREE(current_entry);
-                hmap->count--; // Decrement count as we lost an entry
             }
 
-            current_entry = next_entry; // Move to the next entry in the old chain
+            // Move to the next entry in the old bucket
+            current_entry = next_entry;
         }
     }
 
-    MVN_DS_FREE(hmap->buckets); // Free the old bucket array
+    // Free the old bucket array
+    MVN_DS_FREE(hmap->buckets);
+
+    // Update map with new buckets and capacity
     hmap->buckets  = new_buckets;
     hmap->capacity = new_capacity;
-    return true; // Indicate success
+
+    return true;
 }
 
 // --- Hash Map Implementation ---
 
+/**
+ * @brief Creates a new, empty hash map with a specific initial capacity.
+ * @param capacity The initial number of buckets. If 0, allocation happens on first insert.
+ * @return A pointer to the new mvn_hmap_t, or NULL on allocation failure.
+ */
 mvn_hmap_t *mvn_hmap_new_with_capacity(size_t capacity)
 {
     mvn_hmap_t *hmap_ptr = (mvn_hmap_t *)MVN_DS_MALLOC(sizeof(mvn_hmap_t));
@@ -141,12 +152,23 @@ mvn_hmap_t *mvn_hmap_new_with_capacity(size_t capacity)
     return hmap_ptr;
 }
 
+/**
+ * @brief Creates a new, empty hash map with a default initial capacity.
+ * Uses MVN_DS_HMAP_INITIAL_CAPACITY defined in the header.
+ * @return A pointer to the new mvn_hmap_t, or NULL on allocation failure.
+ */
 mvn_hmap_t *mvn_hmap_new(void)
 {
     // Use MVN_DS_HMAP_INITIAL_CAPACITY by default
     return mvn_hmap_new_with_capacity(MVN_DS_HMAP_INITIAL_CAPACITY);
 }
 
+/**
+ * @brief Frees the memory associated with a hash map, including all keys and values.
+ * Iterates through all buckets and entries, freeing each key string, value, and entry struct.
+ * Finally frees the bucket array and the map struct itself.
+ * @param hmap The hash map to free. Does nothing if NULL.
+ */
 void mvn_hmap_free(mvn_hmap_t *hmap)
 {
     if (hmap == NULL) {
@@ -169,6 +191,16 @@ void mvn_hmap_free(mvn_hmap_t *hmap)
     MVN_DS_FREE(hmap); // Free the map struct
 }
 
+/**
+ * @brief Sets a key-value pair in the hash map using an owned mvn_string_t key.
+ * Takes ownership of the key string and the value's dynamic data.
+ * Frees the existing value if the key already exists. Frees the *provided* key
+ * if the key already exists (as the existing key is kept). Resizes if load factor exceeds limit.
+ * @param hmap The hash map. Must not be NULL.
+ * @param key The key (ownership is taken). Must not be NULL.
+ * @param value The value (ownership is taken if dynamic).
+ * @return true if successful, false on allocation failure or invalid input.
+ */
 bool mvn_hmap_set(mvn_hmap_t *hmap, mvn_string_t *key, mvn_val_t value)
 {
     if (hmap == NULL || key == NULL) {
@@ -190,112 +222,142 @@ bool mvn_hmap_set(mvn_hmap_t *hmap, mvn_string_t *key, mvn_val_t value)
     // Check capacity > 0 before division
     else if ((double)(hmap->count + 1) / hmap->capacity >= MVN_DS_HMAP_LOAD_FACTOR) {
         size_t new_capacity = hmap->capacity * MVN_DS_HMAP_GROWTH_FACTOR;
-        // Check for potential overflow during growth calculation
+        // Check for overflow during growth calculation
         if (new_capacity < hmap->capacity) {
             fprintf(stderr,
                     "[MVN_DS_HMAP] Hash map capacity overflow during resize calculation.\n");
-            // Free key/value as we cannot insert
+            // Attempt to recover if possible, maybe just double? Or fail?
+            // For now, fail if overflow detected.
             mvn_string_free(key);
             mvn_val_free(&value);
             return false;
         }
         if (!mvn_hmap_adjust_capacity(hmap, new_capacity)) {
-            // Resize failed, free key/value
+            // Resize failed, cannot insert. Free key and value.
             mvn_string_free(key);
             mvn_val_free(&value);
             return false;
         }
     }
 
+    // Calculate hash and index
     uint32_t hash_value = mvn_string_hash(key);
-    // Capacity is now > 0 and buckets is not NULL
-    size_t             index = hash_value % hmap->capacity;
-    mvn_hmap_entry_t **bucket_ptr =
-        &hmap->buckets[index]; // Pointer to the slot holding the head pointer
+    size_t   index      = hash_value % hmap->capacity;
 
-    // Traverse chain to check if key exists
-    while (*bucket_ptr != NULL) {
-        mvn_hmap_entry_t *current_entry = *bucket_ptr;
-        // Check hash first, then full equality
-        // Ensure entry->key is not NULL
-        if (current_entry->key != NULL && mvn_string_hash(current_entry->key) == hash_value &&
-            mvn_string_equal(current_entry->key, key)) {
-            // Key found - replace value
-            mvn_val_free(&current_entry->value); // Free the old value
-            current_entry->value = value;        // Assign the new value (takes ownership)
-            mvn_string_free(key); // Free the *provided* key, as we keep the existing one
-            return true;
+    // Check if key already exists in the bucket chain
+    mvn_hmap_entry_t *entry = mvn_hmap_find_entry(hmap->buckets[index], key, hash_value, NULL);
+
+    if (entry != NULL) {
+        // Key exists, replace value. Free old value and the provided key.
+        mvn_val_free(&entry->value);
+        entry->value = value; // Transfer ownership of new value
+        mvn_string_free(key); // Free the provided key, as we keep the existing one
+        return true;
+    } else {
+        // Key doesn't exist, create new entry.
+        mvn_hmap_entry_t *new_entry = (mvn_hmap_entry_t *)MVN_DS_MALLOC(sizeof(mvn_hmap_entry_t));
+        if (new_entry == NULL) {
+            // Allocation failed. Free key and value.
+            mvn_string_free(key);
+            mvn_val_free(&value);
+            return false;
         }
-        bucket_ptr = &current_entry->next; // Move to the next pointer in the chain
+        new_entry->key   = key;   // Take ownership of the provided key
+        new_entry->value = value; // Take ownership of the provided value
+
+        // Insert at the head of the bucket's list
+        new_entry->next      = hmap->buckets[index];
+        hmap->buckets[index] = new_entry;
+        hmap->count++;
+        return true;
     }
-
-    // Key not found - create new entry
-    mvn_hmap_entry_t *new_entry = (mvn_hmap_entry_t *)MVN_DS_MALLOC(sizeof(mvn_hmap_entry_t));
-    if (new_entry == NULL) {
-        // Allocation failed - free the key and value we were given
-        mvn_string_free(key);
-        mvn_val_free(&value);
-        return false;
-    }
-
-    new_entry->key   = key;   // Takes ownership of the provided key
-    new_entry->value = value; // Takes ownership of the provided value
-    new_entry->next  = NULL;  // It's the new end of the chain
-
-    // Link the new entry into the bucket (at the end of the chain where bucket_ptr points)
-    *bucket_ptr = new_entry;
-    hmap->count++;
-    return true;
 }
 
+/**
+ * @brief Sets a key-value pair using a C string for the key.
+ * Creates a new mvn_string_t for the key internally and takes ownership.
+ * Takes ownership of the value's dynamic data.
+ * Frees the existing value if the key already exists. Resizes if load factor exceeds limit.
+ * @param hmap The hash map. Must not be NULL.
+ * @param key_cstr The C string key. Must not be NULL.
+ * @param value The value (ownership is taken if dynamic).
+ * @return true if successful, false on allocation failure or invalid input.
+ */
 bool mvn_hmap_set_cstr(mvn_hmap_t *hmap, const char *key_cstr, mvn_val_t value)
 {
     if (key_cstr == NULL) {
         mvn_val_free(&value); // Free value if key is invalid
         return false;
     }
-    mvn_string_t *key_string = mvn_string_new(key_cstr);
-    if (key_string == NULL) {
-        mvn_val_free(&value); // Free value if key string creation fails
-        return false;
+    // Create an owned mvn_string_t from the C string
+    mvn_string_t *key = mvn_string_new(key_cstr);
+    if (key == NULL) {
+        mvn_val_free(&value); // Free value if key allocation fails
+        return false;         // Failed to create key string
     }
-    // mvn_hmap_set takes ownership of key_string and value
-    if (!mvn_hmap_set(hmap, key_string, value)) {
-        // If set fails, it should have already freed key_string and value
-        return false;
-    }
-    return true;
+    // Call the primary set function, which will take ownership of the created key
+    return mvn_hmap_set(hmap, key, value);
 }
 
+/**
+ * @brief Retrieves a pointer to the value associated with a given mvn_string_t key.
+ * Does not transfer ownership. Returns NULL if the key is not found or map/key is NULL.
+ * @param hmap The hash map to search.
+ * @param key The key to look up.
+ * @return A pointer to the mvn_val_t associated with the key, or NULL if not found.
+ */
 mvn_val_t *mvn_hmap_get(const mvn_hmap_t *hmap, const mvn_string_t *key)
 {
     if (hmap == NULL || key == NULL || hmap->capacity == 0 || hmap->buckets == NULL) {
         return NULL;
     }
+
     uint32_t hash_value = mvn_string_hash(key);
-    // Find entry requires non-const buckets**, but get is const.
-    // Casting away const here is generally safe if find_entry doesn't modify buckets.
-    mvn_hmap_entry_t *entry =
-        mvn_hmap_find_entry(((mvn_hmap_t *)hmap)->buckets, hmap->capacity, key, hash_value);
-    return entry != NULL ? &entry->value : NULL;
+    size_t   index      = hash_value % hmap->capacity;
+
+    mvn_hmap_entry_t *entry = mvn_hmap_find_entry(hmap->buckets[index], key, hash_value, NULL);
+
+    return (entry != NULL) ? &entry->value : NULL;
 }
 
+/**
+ * @brief Retrieves a pointer to the value associated with a given C string key.
+ * Does not transfer ownership. Returns NULL if the key is not found or map/key is NULL.
+ * @param hmap The hash map to search.
+ * @param key_cstr The C string key to look up.
+ * @return A pointer to the mvn_val_t associated with the key, or NULL if not found.
+ */
 mvn_val_t *mvn_hmap_get_cstr(const mvn_hmap_t *hmap, const char *key_cstr)
 {
     if (hmap == NULL || key_cstr == NULL || hmap->capacity == 0 || hmap->buckets == NULL) {
         return NULL;
     }
-    // Create a temporary string wrapper for searching, without allocating new
-    // memory for the chars. Cast discards const, but hash/equal won't modify.
-    mvn_string_t temp_key   = {.length = strlen(key_cstr), .capacity = 0, .data = (char *)key_cstr};
-    uint32_t     hash_value = mvn_string_hash(&temp_key);
 
-    // Need to cast away const from hmap temporarily to call non-const find_entry
+    // Create a temporary mvn_string_t for lookup (stack allocation might be complex)
+    // A heap allocation is simpler but less efficient for just a lookup.
+    // Alternative: Modify find_entry to accept cstr directly (adds complexity).
+    // Let's stick to creating a temporary string for now.
+    mvn_string_t temp_key;
+    temp_key.data   = (char *)key_cstr; // Cast away const for struct compatibility
+    temp_key.length = strlen(key_cstr);
+    // Capacity doesn't matter for hashing/equality checks
+
+    uint32_t hash_value = mvn_string_hash(&temp_key);
+    size_t   index      = hash_value % hmap->capacity;
+
     mvn_hmap_entry_t *entry =
-        mvn_hmap_find_entry(((mvn_hmap_t *)hmap)->buckets, hmap->capacity, &temp_key, hash_value);
-    return entry != NULL ? &entry->value : NULL;
+        mvn_hmap_find_entry(hmap->buckets[index], &temp_key, hash_value, NULL);
+
+    return (entry != NULL) ? &entry->value : NULL;
 }
 
+/**
+ * @brief Deletes a key-value pair from the hash map using an mvn_string_t key.
+ * Frees the key string and the associated value stored in the map.
+ * @param hmap The hash map. Must not be NULL.
+ * @param key The key to delete. Must not be NULL.
+ * @return true if the key was found and deleted, false otherwise.
+ */
 bool mvn_hmap_delete(mvn_hmap_t *hmap, const mvn_string_t *key)
 {
     if (hmap == NULL || key == NULL || hmap->capacity == 0 || hmap->buckets == NULL) {
@@ -304,41 +366,52 @@ bool mvn_hmap_delete(mvn_hmap_t *hmap, const mvn_string_t *key)
 
     uint32_t hash_value = mvn_string_hash(key);
     size_t   index      = hash_value % hmap->capacity;
-    // Pointer to the link pointing to the current entry
-    mvn_hmap_entry_t **bucket_ptr = &hmap->buckets[index];
-    mvn_hmap_entry_t  *entry      = *bucket_ptr;
 
-    while (entry != NULL) {
-        // Check hash and then equality
-        // Ensure entry->key is not NULL
-        if (entry->key != NULL && mvn_string_hash(entry->key) == hash_value &&
-            mvn_string_equal(entry->key, key)) {
-            // Found the entry, unlink it
-            *bucket_ptr = entry->next; // Make the previous link point to the next entry
+    mvn_hmap_entry_t *prev_entry = NULL;
+    mvn_hmap_entry_t *entry =
+        mvn_hmap_find_entry(hmap->buckets[index], key, hash_value, &prev_entry);
 
-            // Free the deleted entry's contents and the entry itself
-            mvn_string_free(entry->key);
-            mvn_val_free(&entry->value);
-            MVN_DS_FREE(entry);
-            hmap->count--;
-            return true; // Successfully deleted
-        }
-        // Move to the next entry's link
-        bucket_ptr = &entry->next;
-        entry      = *bucket_ptr;
+    if (entry == NULL) {
+        return false; // Key not found
     }
 
-    return false; // Key not found
+    // Unlink the entry from the list
+    if (prev_entry == NULL) {
+        // Entry was the head of the list
+        hmap->buckets[index] = entry->next;
+    } else {
+        // Entry was in the middle or end
+        prev_entry->next = entry->next;
+    }
+
+    // Free the entry's key, value, and the entry struct itself
+    mvn_string_free(entry->key);
+    mvn_val_free(&entry->value);
+    MVN_DS_FREE(entry);
+
+    hmap->count--;
+    return true;
 }
 
+/**
+ * @brief Deletes a key-value pair using a C string key.
+ * Frees the key string and the associated value stored in the map.
+ * @param hmap The hash map. Must not be NULL.
+ * @param key_cstr The C string key to delete. Must not be NULL.
+ * @return true if the key was found and deleted, false otherwise.
+ */
 bool mvn_hmap_delete_cstr(mvn_hmap_t *hmap, const char *key_cstr)
 {
     if (hmap == NULL || key_cstr == NULL || hmap->capacity == 0 || hmap->buckets == NULL) {
         return false;
     }
-    // Use the temporary string trick again for lookup
-    // Cast discards const, but delete won't modify.
-    mvn_string_t temp_key = {.length = strlen(key_cstr), .capacity = 0, .data = (char *)key_cstr};
-    // Call the actual delete function
+
+    // Create a temporary mvn_string_t for lookup
+    mvn_string_t temp_key;
+    temp_key.data   = (char *)key_cstr;
+    temp_key.length = strlen(key_cstr);
+
+    // Call the primary delete function
+    // Note: This relies on mvn_hmap_delete comparing keys by content, not pointer.
     return mvn_hmap_delete(hmap, &temp_key);
 }

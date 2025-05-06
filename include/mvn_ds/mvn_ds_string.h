@@ -14,73 +14,36 @@
 extern "C" {
 #endif /* __cplusplus */
 
+/** @brief Default initial capacity for new strings created with mvn_string_new(). */
 #define MVN_DS_STRING_INITIAL_CAPACITY 8
-#define MVN_DS_STRING_GROWTH_FACTOR    2
+/** @brief Factor by which the string capacity grows when resizing. */
+#define MVN_DS_STRING_GROWTH_FACTOR 2
 
 // --- String Operations ---
 
-/**
- * @brief Creates a new string by copying a C string.
- * @param chars The null-terminated C string to copy. If NULL, creates an empty string.
- * @return A pointer to the new mvn_string_t, or NULL on allocation failure.
- */
+// Creates a new string by copying a C string.
 mvn_string_t *mvn_string_new(const char *chars);
 
-/**
- * @brief Creates a new string with a specific initial capacity.
- * @param capacity The initial capacity (excluding null terminator).
- * @return A pointer to the new mvn_string_t, or NULL on allocation failure.
- */
+// Creates a new string with a specific initial capacity.
 mvn_string_t *mvn_string_new_with_capacity(size_t capacity);
 
-/**
- * @brief Frees the memory associated with a string.
- * @param string The string to free. Does nothing if NULL.
- */
-void mvn_string_free(mvn_string_t *string);
+// Frees the memory associated with a string.
+void mvn_string_free(mvn_string_t *string_ptr);
 
-/**
- * @brief Appends a C string to an mvn_string_t.
- * Resizes the string if necessary.
- * @param string The string to append to. Must not be NULL.
- * @param chars The null-terminated C string to append. Must not be NULL.
- * @return true if successful, false on allocation failure.
- */
-bool mvn_string_append_cstr(mvn_string_t *string, const char *chars);
+// Appends a C string to an mvn_string_t.
+bool mvn_string_append_cstr(mvn_string_t *string_ptr, const char *chars);
 
-/**
- * @brief Appends another mvn_string_t to an mvn_string_t.
- * Resizes the string if necessary.
- * @param dest The destination string. Must not be NULL.
- * @param src The source string to append. Must not be NULL.
- * @return true if successful, false on allocation failure.
- */
-bool mvn_string_append(mvn_string_t *dest, const mvn_string_t *src);
+// Appends another mvn_string_t to an mvn_string_t.
+bool mvn_string_append(mvn_string_t *dest_ptr, const mvn_string_t *src_ptr);
 
-/**
- * @brief Compares two mvn_string_t strings for equality.
- * @param str1 The first string.
- * @param str2 The second string.
- * @return true if the strings have the same content, false otherwise. Returns false if either
- * string is NULL.
- */
-bool mvn_string_equal(const mvn_string_t *str1, const mvn_string_t *str2);
+// Compares two mvn_string_t strings for equality.
+bool mvn_string_equal(const mvn_string_t *str1_ptr, const mvn_string_t *str2_ptr);
 
-/**
- * @brief Compares an mvn_string_t with a C string for equality.
- * @param str1 The mvn_string_t.
- * @param cstr2 The null-terminated C string.
- * @return true if the strings have the same content, false otherwise. Returns false if either is
- * NULL.
- */
-bool mvn_string_equal_cstr(const mvn_string_t *str1, const char *cstr2);
+// Compares an mvn_string_t with a C string for equality.
+bool mvn_string_equal_cstr(const mvn_string_t *str1_ptr, const char *cstr2);
 
-/**
- * @brief Calculates a hash value for the string (FNV-1a algorithm).
- * @param string The string to hash. Must not be NULL.
- * @return The 32-bit hash value.
- */
-uint32_t mvn_string_hash(const mvn_string_t *string);
+// Calculates a hash value for the string (FNV-1a algorithm).
+uint32_t mvn_string_hash(const mvn_string_t *string_ptr);
 
 #ifdef __cplusplus
 }

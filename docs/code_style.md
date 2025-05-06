@@ -13,7 +13,7 @@
 - `.c` file should first include corresponding `.h` file, later others, unless otherwise explicitly necessary
 - Do not include module private declarations in header file
 - Header file example (no license for sake of an example)
-- Ensure Doxygen comments are used for implementation only and not in the header file unless explicitly necessary
+- Ensure Doxygen comments are used for implementation only and not in the header file unless explicitly necessary for code only defined in the header
 
 ```c
 /* License comes here */
