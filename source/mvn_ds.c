@@ -38,9 +38,37 @@ mvn_val_t mvn_val_null(void)
  * @param b The boolean value.
  * @return A mvn_val_t representing the boolean.
  */
-mvn_val_t mvn_val_bool(bool b)
+mvn_val_t mvn_val_bool(bool b_val)
 {
-    return (mvn_val_t){.type = MVN_VAL_BOOL, .b = b};
+    return (mvn_val_t){.type = MVN_VAL_BOOL, .b = b_val};
+}
+
+/**
+ * @brief Creates an 8-bit integer value.
+ * @param i8_val The integer value.
+ * @return A mvn_val_t representing the integer.
+ */
+mvn_val_t mvn_val_i8(int8_t i8_val)
+{
+    /* Copyright (c) 2024 Jake Larson */
+    mvn_val_t val_item;
+    val_item.type = MVN_VAL_I8;
+    val_item.i8   = i8_val;
+    return val_item;
+}
+
+/**
+ * @brief Creates a 16-bit integer value.
+ * @param i16_val The integer value.
+ * @return A mvn_val_t representing the integer.
+ */
+mvn_val_t mvn_val_i16(int16_t i16_val)
+{
+    /* Copyright (c) 2024 Jake Larson */
+    mvn_val_t val_item;
+    val_item.type = MVN_VAL_I16;
+    val_item.i16  = i16_val;
+    return val_item;
 }
 
 /**
@@ -63,6 +91,34 @@ mvn_val_t mvn_val_i64(int64_t i64_val)
     mvn_val_t val_item;
     val_item.type = MVN_VAL_I64;
     val_item.i64  = i64_val;
+    return val_item;
+}
+
+/**
+ * @brief Creates an 8-bit unsigned integer value.
+ * @param u8_val The unsigned integer value.
+ * @return A mvn_val_t representing the unsigned integer.
+ */
+mvn_val_t mvn_val_u8(uint8_t u8_val)
+{
+    /* Copyright (c) 2024 Jake Larson */
+    mvn_val_t val_item;
+    val_item.type = MVN_VAL_U8;
+    val_item.u8   = u8_val;
+    return val_item;
+}
+
+/**
+ * @brief Creates a 16-bit unsigned integer value.
+ * @param u16_val The unsigned integer value.
+ * @return A mvn_val_t representing the unsigned integer.
+ */
+mvn_val_t mvn_val_u16(uint16_t u16_val)
+{
+    /* Copyright (c) 2024 Jake Larson */
+    mvn_val_t val_item;
+    val_item.type = MVN_VAL_U16;
+    val_item.u16  = u16_val;
     return val_item;
 }
 
@@ -128,6 +184,22 @@ mvn_val_t mvn_val_char(char char_val)
     mvn_val_t val_item;
     val_item.type = MVN_VAL_CHAR;
     val_item.c    = char_val;
+    return val_item;
+}
+
+/**
+ * @brief Creates a generic pointer value.
+ * @param ptr_val The pointer value.
+ * @return A mvn_val_t representing the pointer.
+ * @note The mvn_val_t does NOT take ownership of the pointed-to memory.
+ *       The caller is responsible for managing the lifetime of the data pointed to by ptr_val.
+ */
+mvn_val_t mvn_val_ptr(void *ptr_val)
+{
+    /* Copyright (c) 2024 Jake Larson */
+    mvn_val_t val_item;
+    val_item.type = MVN_VAL_PTR;
+    val_item.ptr  = ptr_val;
     return val_item;
 }
 
@@ -242,13 +314,18 @@ void mvn_val_free(mvn_val_t *value)
             // Primitive types and NULL don't own heap resources:
         case MVN_VAL_NULL:
         case MVN_VAL_BOOL:
+        case MVN_VAL_I8:
+        case MVN_VAL_I16:
         case MVN_VAL_I32:
         case MVN_VAL_I64:
+        case MVN_VAL_U8:
+        case MVN_VAL_U16:
         case MVN_VAL_U32:
         case MVN_VAL_U64:
         case MVN_VAL_F32:
         case MVN_VAL_F64:
         case MVN_VAL_CHAR:
+        case MVN_VAL_PTR:
             // No action needed
             break;
             // Default case for safety, although all enum values should be handled
@@ -273,10 +350,18 @@ const char *mvn_val_type_to_str(mvn_val_type_t type)
             return "NULL";
         case MVN_VAL_BOOL:
             return "BOOL";
+        case MVN_VAL_I8:
+            return "I8";
+        case MVN_VAL_I16:
+            return "I16";
         case MVN_VAL_I32:
             return "I32";
         case MVN_VAL_I64:
             return "I64";
+        case MVN_VAL_U8:
+            return "U8";
+        case MVN_VAL_U16:
+            return "U16";
         case MVN_VAL_U32:
             return "U32";
         case MVN_VAL_U64:
@@ -287,6 +372,8 @@ const char *mvn_val_type_to_str(mvn_val_type_t type)
             return "F64";
         case MVN_VAL_CHAR:
             return "CHAR";
+        case MVN_VAL_PTR:
+            return "PTR";
         case MVN_VAL_STRING:
             return "STRING";
         case MVN_VAL_ARRAY:
@@ -314,13 +401,25 @@ void mvn_val_print(const mvn_val_t *value)
             printf("null");
             break;
         case MVN_VAL_BOOL:
-            printf(value->b ? "true" : "false");
+            printf("Bool(%s)", value->b ? "true" : "false");
+            break;
+        case MVN_VAL_I8:
+            printf("I8(%" PRId8 ")", value->i8);
+            break;
+        case MVN_VAL_I16:
+            printf("I16(%" PRId16 ")", value->i16);
             break;
         case MVN_VAL_I32:
             printf("%" PRId32, value->i32); // Use PRI macros for portability
             break;
         case MVN_VAL_I64:
             printf("I64(%" PRId64 ")", value->i64);
+            break;
+        case MVN_VAL_U8:
+            printf("U8(%" PRIu8 ")", value->u8);
+            break;
+        case MVN_VAL_U16:
+            printf("U16(%" PRIu16 ")", value->u16);
             break;
         case MVN_VAL_U32:
             printf("U32(%" PRIu32 ")", value->u32);
@@ -340,6 +439,9 @@ void mvn_val_print(const mvn_val_t *value)
             } else {
                 printf("Char(0x%02X)", (unsigned char)value->c);
             }
+            break;
+        case MVN_VAL_PTR:
+            printf("Ptr(%p)", value->ptr);
             break;
         case MVN_VAL_STRING:
             // Check str and str->data for validity
@@ -427,10 +529,18 @@ bool mvn_val_equal(const mvn_val_t *val_one, const mvn_val_t *val_two)
             return true; // NULL is always equal to NULL
         case MVN_VAL_BOOL:
             return val_one->b == val_two->b;
+        case MVN_VAL_I8:
+            return val_one->i8 == val_two->i8;
+        case MVN_VAL_I16:
+            return val_one->i16 == val_two->i16;
         case MVN_VAL_I32:
             return val_one->i32 == val_two->i32;
         case MVN_VAL_I64:
             return val_one->i64 == val_two->i64;
+        case MVN_VAL_U8:
+            return val_one->u8 == val_two->u8;
+        case MVN_VAL_U16:
+            return val_one->u16 == val_two->u16;
         case MVN_VAL_U32:
             return val_one->u32 == val_two->u32;
         case MVN_VAL_U64:
@@ -443,6 +553,8 @@ bool mvn_val_equal(const mvn_val_t *val_one, const mvn_val_t *val_two)
             return fabs(val_one->f64 - val_two->f64) < MVN_DS_DOUBLE_EPSILON;
         case MVN_VAL_CHAR:
             return val_one->c == val_two->c;
+        case MVN_VAL_PTR:
+            return val_one->ptr == val_two->ptr;
         case MVN_VAL_STRING:
             // Use mvn_str_equal, handles NULL internal data pointers
             return mvn_str_equal(val_one->str, val_two->str);

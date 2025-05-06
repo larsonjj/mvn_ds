@@ -8,7 +8,7 @@ A C99 compatible library providing a generic set of data structures, including d
 
 Key data types include:
 
-- `mvn_val_t`: A tagged union type that can hold various primitive types (`NULL`, `bool`, `int32_t`, `int64_t`, `uint32_t`, `uint64_t`, `float`, `double`, `char`), as well as dynamic `mvn_str_t`, `mvn_arr_t`, and `mvn_hmap_t`.
+- `mvn_val_t`: A tagged union type that can hold various primitive types (`NULL`, `bool`, `int8_t`, `int16_t`, `int32_t`, `int64_t`, `uint8_t`, `uint16_t`, `uint32_t`, `uint64_t`, `float`, `double`, `char`, `void*`), as well as dynamic `mvn_str_t`, `mvn_arr_t`, and `mvn_hmap_t`.
 - `mvn_str_t`: A dynamic string implementation.
 - `mvn_arr_t`: A dynamic array (vector) implementation capable of storing `mvn_val_t` values, allowing for heterogeneous collections and nesting.
 - `mvn_hmap_t`: A hash map implementation using `mvn_str_t` keys and storing `mvn_val_t` values, also supporting nesting.
