@@ -21,7 +21,7 @@ set(MVN_DS_TEST_MODULES
     arr
     hmap
     primitives
-    string
+    str
 )
 
 # Build all test executables

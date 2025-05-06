@@ -4,7 +4,7 @@
  */
 #include <cstdlib> // For EXIT_SUCCESS, EXIT_FAILURE
 #include <iostream>
-#include <mvn_ds/mvn_ds_string.h> // Include one of the library headers
+#include <mvn_ds/mvn_ds_str.h> // Include one of the library headers
 
 int main()
 {

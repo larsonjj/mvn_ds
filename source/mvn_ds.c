@@ -180,7 +180,7 @@ void mvn_val_free(mvn_val_t *value)
     switch (value->type) {
             // Dynamic types that need freeing:
         case MVN_VAL_STRING:
-            mvn_str_free(value->str); // Calls function from mvn_ds_string.c
+            mvn_str_free(value->str); // Calls function from mvn_ds_str.c
             break;
         case MVN_VAL_ARRAY:
             mvn_arr_free(value->arr); // Calls function from mvn_ds_arr.c

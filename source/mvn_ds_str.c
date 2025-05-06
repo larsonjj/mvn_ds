@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2024 Jake Larson
  */
-#include "mvn_ds/mvn_ds_string.h"
+#include "mvn_ds/mvn_ds_str.h"
 
 #include "mvn_ds/mvn_ds_utils.h" // Provides mvn_reallocate, memory macros
 

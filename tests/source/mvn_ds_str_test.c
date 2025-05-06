@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2024 Jake Larson
  */
-#include "mvn_ds_string_test.h"
+#include "mvn_ds_str_test.h"
 
 #include "mvn_ds/mvn_ds.h"
 #include "mvn_ds_test_utils.h"

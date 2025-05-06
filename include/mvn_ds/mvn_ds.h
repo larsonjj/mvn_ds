@@ -9,7 +9,7 @@
 // Include component function declarations
 #include "mvn_ds_arr.h"
 #include "mvn_ds_hmap.h"
-#include "mvn_ds_string.h"
+#include "mvn_ds_str.h"
 
 // Include basic stdlib headers needed by users of mvn_val_t directly
 #include <stdbool.h>
@@ -46,7 +46,7 @@ void mvn_val_print(const mvn_val_t *value);
 bool mvn_val_equal(const mvn_val_t *val_one, const mvn_val_t *val_two);
 
 // --- Component Operations ---
-// Declarations are now in their respective headers (mvn_ds_string.h, etc.)
+// Declarations are now in their respective headers (mvn_ds_str.h, etc.)
 
 #ifdef __cplusplus
 }

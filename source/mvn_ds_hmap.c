@@ -3,8 +3,8 @@
  */
 #include "mvn_ds/mvn_ds_hmap.h"
 
-#include "mvn_ds/mvn_ds.h"        // For mvn_val_free
-#include "mvn_ds/mvn_ds_string.h" // Needed for mvn_str_hash, mvn_str_equal, mvn_str_new, mvn_str_free
+#include "mvn_ds/mvn_ds.h"     // For mvn_val_free
+#include "mvn_ds/mvn_ds_str.h" // Needed for mvn_str_hash, mvn_str_equal, mvn_str_new, mvn_str_free
 #include "mvn_ds/mvn_ds_utils.h" // For memory macros (MVN_DS_*)
 
 #include <assert.h>

@@ -69,10 +69,10 @@ Tests are built if `MVN_DS_BUILD_TESTS` option is `ON` (default).
     ctest --output-on-failure
     ```
 
-    To run a specific test (e.g., `mvn_ds_string_test`):
+    To run a specific test (e.g., `mvn_ds_str_test`):
 
     ```bash
-    ctest --output-on-failure -R ^mvn_ds_string_test$
+    ctest --output-on-failure -R ^mvn_ds_str_test$
     ```
 
     Memory checking can be performed using tools like Valgrind, as configured in the GitHub Actions workflow (see [`.github/workflows/memory-check.yml`](.github/workflows/memory-check.yml)).
