@@ -1,0 +1,63 @@
+# filepath: .github/workflows/doxygen-pages.yml
+name: Deploy Doxygen to GitHub Pages
+
+on:
+    push:
+        branches:
+            - main # Or your default branch, e.g., master
+    workflow_dispatch: # Allows manual triggering
+
+# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+permissions:
+    contents: read
+    pages: write
+    id-token: write
+
+# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
+# However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
+concurrency:
+    group: "pages"
+    cancel-in-progress: false
+
+jobs:
+    build-docs:
+        name: Build Doxygen Documentation
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+
+            - name: Install Doxygen and Graphviz
+              run: |
+                  sudo apt-get update
+                  sudo apt-get install -y doxygen graphviz
+
+            - name: Generate Doxygen Documentation
+              run: |
+                  # This command assumes your Doxyfile is in the root of your repository
+                  # and is configured to output HTML documentation.
+                  # Ensure Doxyfile's OUTPUT_DIRECTORY and HTML_OUTPUT are set correctly.
+                  # For example, if OUTPUT_DIRECTORY = doxygen_build and HTML_OUTPUT = html,
+                  # the documentation will be in 'doxygen_build/html'.
+                  doxygen Doxyfile
+
+            - name: Upload GitHub Pages artifact
+              uses: actions/upload-pages-artifact@v3
+              with:
+                  # Path to the directory containing the Doxygen HTML output.
+                  # This MUST match the output path configured in your Doxyfile.
+                  # e.g., if Doxyfile has OUTPUT_DIRECTORY = doxygen_build and HTML_OUTPUT = html,
+                  # then the path here should be 'doxygen_build/html'.
+                  path: "doxygen_build/html" # Adjust if your Doxyfile outputs elsewhere
+
+    deploy:
+        name: Deploy to GitHub Pages
+        needs: build-docs
+        runs-on: ubuntu-latest
+        environment:
+            name: github-pages
+            url: ${{ steps.deployment.outputs.page_url }}
+        steps:
+            - name: Deploy to GitHub Pages
+              id: deployment
+              uses: actions/deploy-pages@v4
