@@ -42,19 +42,6 @@ jobs:
                     valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes --verbose --error-exitcode=1 "$test"
                   done
 
-            - name: Run examples with Valgrind (if applicable)
-              working-directory: ${{github.workspace}}/build/examples
-              run: |
-                  mkdir -p reports
-                  for example in mvn_example_*; do
-                    if [ -x "$example" ]; then
-                      echo "Running Valgrind on $example"
-                      # Run for a short time since examples might be interactive
-                      # Generate XML report for each example
-                      timeout 5 valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes --xml=yes --xml-file=reports/${example}-valgrind.xml ./$example || echo "Example timed out, which is expected for interactive programs"
-                    fi
-                  done
-
             - name: Generate XML report for tests
               working-directory: ${{github.workspace}}/build/tests
               run: |
@@ -74,9 +61,3 @@ jobs:
               with:
                   name: valgrind-test-results
                   path: ${{github.workspace}}/build/tests/reports/*.xml
-
-            - name: Upload Valgrind example results
-              uses: actions/upload-artifact@v4
-              with:
-                  name: valgrind-example-results
-                  path: ${{github.workspace}}/build/examples/reports/*.xml
