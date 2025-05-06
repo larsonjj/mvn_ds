@@ -1,10 +1,118 @@
+/*
+ * Copyright (c) 2024 Jake Larson
+ */
 #include "mvn_ds_primitives_test.h"
 
 #include "mvn_ds/mvn_ds.h"
 #include "mvn_ds_test_utils.h"
 
+#include <math.h>    // For fabsf, fabs
+#include <stdbool.h> // For bool
+#include <stdint.h>  // For int types
 #include <stdio.h>
 #include <string.h>
+
+// --- Test Functions ---
+
+static bool test_primitives(void)
+{
+    // --- Test MVN_VAL_NULL ---
+    mvn_val_t val_null = mvn_val_null();
+    TEST_ASSERT(val_null.type == MVN_VAL_NULL, "Null type mismatch");
+    mvn_val_free(&val_null);
+    TEST_ASSERT(val_null.type == MVN_VAL_NULL, "Null type mismatch after free");
+
+    // --- Test MVN_VAL_BOOL ---
+    mvn_val_t val_bool_true = mvn_val_bool(true);
+    TEST_ASSERT(val_bool_true.type == MVN_VAL_BOOL, "Bool(true) type mismatch");
+    TEST_ASSERT(val_bool_true.b == true, "Bool(true) value mismatch");
+    mvn_val_free(&val_bool_true);
+    TEST_ASSERT(val_bool_true.type == MVN_VAL_NULL, "Bool(true) type mismatch after free");
+
+    mvn_val_t val_bool_false = mvn_val_bool(false);
+    TEST_ASSERT(val_bool_false.type == MVN_VAL_BOOL, "Bool(false) type mismatch");
+    TEST_ASSERT(val_bool_false.b == false, "Bool(false) value mismatch");
+    mvn_val_free(&val_bool_false);
+    TEST_ASSERT(val_bool_false.type == MVN_VAL_NULL, "Bool(false) type mismatch after free");
+
+    // --- Test MVN_VAL_I32 ---
+    mvn_val_t val_i32_pos = mvn_val_i32(12345);
+    TEST_ASSERT(val_i32_pos.type == MVN_VAL_I32, "I32(pos) type mismatch");
+    TEST_ASSERT(val_i32_pos.i32 == 12345, "I32(pos) value mismatch");
+    mvn_val_free(&val_i32_pos);
+    TEST_ASSERT(val_i32_pos.type == MVN_VAL_NULL, "I32(pos) type mismatch after free");
+
+    mvn_val_t val_i32_neg = mvn_val_i32(-54321);
+    TEST_ASSERT(val_i32_neg.type == MVN_VAL_I32, "I32(neg) type mismatch");
+    TEST_ASSERT(val_i32_neg.i32 == -54321, "I32(neg) value mismatch");
+    mvn_val_free(&val_i32_neg);
+    TEST_ASSERT(val_i32_neg.type == MVN_VAL_NULL, "I32(neg) type mismatch after free");
+
+    mvn_val_t val_i32_zero = mvn_val_i32(0);
+    TEST_ASSERT(val_i32_zero.type == MVN_VAL_I32, "I32(zero) type mismatch");
+    TEST_ASSERT(val_i32_zero.i32 == 0, "I32(zero) value mismatch");
+    mvn_val_free(&val_i32_zero);
+    TEST_ASSERT(val_i32_zero.type == MVN_VAL_NULL, "I32(zero) type mismatch after free");
+
+    // --- Test MVN_VAL_I64 ---
+    mvn_val_t val_i64_pos = mvn_val_i64(9876543210LL);
+    TEST_ASSERT(val_i64_pos.type == MVN_VAL_I64, "I64(pos) type mismatch");
+    TEST_ASSERT(val_i64_pos.i64 == 9876543210LL, "I64(pos) value mismatch");
+    mvn_val_free(&val_i64_pos);
+    TEST_ASSERT(val_i64_pos.type == MVN_VAL_NULL, "I64(pos) type mismatch after free");
+
+    mvn_val_t val_i64_neg = mvn_val_i64(-1029384756LL);
+    TEST_ASSERT(val_i64_neg.type == MVN_VAL_I64, "I64(neg) type mismatch");
+    TEST_ASSERT(val_i64_neg.i64 == -1029384756LL, "I64(neg) value mismatch");
+    mvn_val_free(&val_i64_neg);
+    TEST_ASSERT(val_i64_neg.type == MVN_VAL_NULL, "I64(neg) type mismatch after free");
+
+    mvn_val_t val_i64_zero = mvn_val_i64(0LL);
+    TEST_ASSERT(val_i64_zero.type == MVN_VAL_I64, "I64(zero) type mismatch");
+    TEST_ASSERT(val_i64_zero.i64 == 0LL, "I64(zero) value mismatch");
+    mvn_val_free(&val_i64_zero);
+    TEST_ASSERT(val_i64_zero.type == MVN_VAL_NULL, "I64(zero) type mismatch after free");
+
+    // --- Test MVN_VAL_F32 ---
+    mvn_val_t val_f32_pos = mvn_val_f32(123.456f);
+    TEST_ASSERT(val_f32_pos.type == MVN_VAL_F32, "F32(pos) type mismatch");
+    TEST_ASSERT_FLOAT_EQ(val_f32_pos.f32, 123.456f, "F32(pos) value mismatch");
+    mvn_val_free(&val_f32_pos);
+    TEST_ASSERT(val_f32_pos.type == MVN_VAL_NULL, "F32(pos) type mismatch after free");
+
+    mvn_val_t val_f32_neg = mvn_val_f32(-987.654f);
+    TEST_ASSERT(val_f32_neg.type == MVN_VAL_F32, "F32(neg) type mismatch");
+    TEST_ASSERT_FLOAT_EQ(val_f32_neg.f32, -987.654f, "F32(neg) value mismatch");
+    mvn_val_free(&val_f32_neg);
+    TEST_ASSERT(val_f32_neg.type == MVN_VAL_NULL, "F32(neg) type mismatch after free");
+
+    mvn_val_t val_f32_zero = mvn_val_f32(0.0f);
+    TEST_ASSERT(val_f32_zero.type == MVN_VAL_F32, "F32(zero) type mismatch");
+    TEST_ASSERT_FLOAT_EQ(val_f32_zero.f32, 0.0f, "F32(zero) value mismatch");
+    mvn_val_free(&val_f32_zero);
+    TEST_ASSERT(val_f32_zero.type == MVN_VAL_NULL, "F32(zero) type mismatch after free");
+
+    // --- Test MVN_VAL_F64 ---
+    mvn_val_t val_f64_pos = mvn_val_f64(123456.789012);
+    TEST_ASSERT(val_f64_pos.type == MVN_VAL_F64, "F64(pos) type mismatch");
+    TEST_ASSERT_DOUBLE_EQ(val_f64_pos.f64, 123456.789012, "F64(pos) value mismatch");
+    mvn_val_free(&val_f64_pos);
+    TEST_ASSERT(val_f64_pos.type == MVN_VAL_NULL, "F64(pos) type mismatch after free");
+
+    mvn_val_t val_f64_neg = mvn_val_f64(-987654.321098);
+    TEST_ASSERT(val_f64_neg.type == MVN_VAL_F64, "F64(neg) type mismatch");
+    TEST_ASSERT_DOUBLE_EQ(val_f64_neg.f64, -987654.321098, "F64(neg) value mismatch");
+    mvn_val_free(&val_f64_neg);
+    TEST_ASSERT(val_f64_neg.type == MVN_VAL_NULL, "F64(neg) type mismatch after free");
+
+    mvn_val_t val_f64_zero = mvn_val_f64(0.0);
+    TEST_ASSERT(val_f64_zero.type == MVN_VAL_F64, "F64(zero) type mismatch");
+    TEST_ASSERT_DOUBLE_EQ(val_f64_zero.f64, 0.0, "F64(zero) value mismatch");
+    mvn_val_free(&val_f64_zero);
+    TEST_ASSERT(val_f64_zero.type == MVN_VAL_NULL, "F64(zero) type mismatch after free");
+
+    return true; // All tests passed
+}
 
 /**
  * \brief           Run all primitives tests
@@ -19,14 +127,13 @@ int run_primitives_tests(int *passed_tests, int *failed_tests, int *total_tests)
     int passed_before = *passed_tests;
     int failed_before = *failed_tests;
 
-    //  RUN_TEST(test_basic_primitives);
+    RUN_TEST(test_primitives); // Run the new test function
 
     int tests_run = (*passed_tests - passed_before) + (*failed_tests - failed_before);
     (*total_tests) += tests_run;
 
-    return *passed_tests - passed_before;
-
-    printf("\n");
+    printf("\n");                            // Add a newline after the tests for this module
+    return (*failed_tests == failed_before); // Return true if no new failures
 }
 
 int main(void)

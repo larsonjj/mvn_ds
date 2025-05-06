@@ -164,19 +164,25 @@ bool mvn_string_append_cstr(mvn_string_t *string, const char *chars)
 
 /**
  * @brief Compares two dynamic strings for equality.
- * @param s1 The first string.
- * @param s2 The second string.
+ * @param str1 The first string.
+ * @param str2 The second string.
  * @return true if the strings have the same content, false otherwise. Also
  * returns false if either string is NULL.
  */
-bool mvn_string_equal(const mvn_string_t *s1, const mvn_string_t *s2)
+bool mvn_string_equal(const mvn_string_t *str1, const mvn_string_t *str2)
 {
-    if (s1 == s2)
+    // If one is NULL and the other isn't, they are not equal.
+    // This also handles the case where both are NULL (returns false).
+    if (!str1 || !str2) {
+        return false;
+    }
+
+    if (str1 == str2)
         return true; // Same pointer
-    if (!s1 || !s2)
+    if (!str1 || !str2)
         return false; // One or both are NULL
     // Check length first for quick exit
-    return s1->length == s2->length && memcmp(s1->data, s2->data, s1->length) == 0;
+    return str1->length == str2->length && memcmp(str1->data, str2->data, str1->length) == 0;
 }
 
 /**
