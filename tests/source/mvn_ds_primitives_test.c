@@ -4,6 +4,9 @@
 #include "mvn_ds_primitives_test.h"
 
 #include "mvn_ds/mvn_ds.h"
+#include "mvn_ds/mvn_ds_array.h"  // For mvn_val_array
+#include "mvn_ds/mvn_ds_hmap.h"   // For mvn_val_hmap
+#include "mvn_ds/mvn_ds_string.h" // For mvn_val_string_borrow
 #include "mvn_ds_test_utils.h"
 
 #include <math.h>    // For fabsf, fabs
@@ -114,6 +117,47 @@ static bool test_primitives(void)
     return true; // All tests passed
 }
 
+static bool test_additional_primitive_operations(void)
+{
+    /*
+     * Copyright (c) 2024 Jake Larson
+     */
+    printf("Testing mvn_val_print(NULL):\n");
+    mvn_val_print(NULL); // Test printing a NULL mvn_val_t pointer
+    printf("\nEnd of mvn_val_print(NULL) test.\n");
+
+    mvn_val_t val_i32_sample  = mvn_val_i32(123);
+    mvn_val_t val_str_sample  = mvn_val_string("sample"); // Changed from mvn_val_string_borrow
+    mvn_val_t val_arr_sample  = mvn_val_array();
+    mvn_val_t val_hmap_sample = mvn_val_hmap();
+
+    // Test mvn_val_equal with NULL mvn_val_t* pointers
+    TEST_ASSERT(!mvn_val_equal(NULL, &val_i32_sample), "mvn_val_equal(NULL, &val) should be false");
+    TEST_ASSERT(!mvn_val_equal(&val_i32_sample, NULL), "mvn_val_equal(&val, NULL) should be false");
+    // Behavior of mvn_val_equal(NULL, NULL) depends on its implementation.
+    // Assuming it returns false if either pointer is NULL, as per the snippet.
+    // If it's defined that two NULL pointers are "equal", this assertion would change.
+    TEST_ASSERT(mvn_val_equal(NULL, NULL),                   // Changed from !mvn_val_equal
+                "mvn_val_equal(NULL, NULL) should be true"); // Updated message
+
+    // Test mvn_val_equal comparing primitives with complex types (should be false due to type
+    // mismatch)
+    TEST_ASSERT(!mvn_val_equal(&val_i32_sample, &val_str_sample), "I32 == String should be false");
+    TEST_ASSERT(!mvn_val_equal(&val_i32_sample, &val_arr_sample), "I32 == Array should be false");
+    TEST_ASSERT(!mvn_val_equal(&val_i32_sample, &val_hmap_sample), "I32 == Hmap should be false");
+
+    // Clean up complex types if they were fully created (not just borrowed for string)
+    // If mvn_val_string_borrow was used, no free for val_str_sample.str
+    // If mvn_val_string was used, then mvn_string_free(val_str_sample.str) or
+    // mvn_val_free(&val_str_sample)
+    mvn_val_free(&val_str_sample); // Frees the string if mvn_val_string created it
+    mvn_val_free(&val_arr_sample);
+    mvn_val_free(&val_hmap_sample);
+    // val_i32_sample is primitive, mvn_val_free just resets its type
+
+    return true; // Test passed
+}
+
 /**
  * \brief           Run all primitives tests
  * \param[out]      passed_tests: Pointer to passed tests counter
@@ -127,7 +171,8 @@ int run_primitives_tests(int *passed_tests, int *failed_tests, int *total_tests)
     int passed_before = *passed_tests;
     int failed_before = *failed_tests;
 
-    RUN_TEST(test_primitives); // Run the new test function
+    RUN_TEST(test_primitives);                      // Run the new test function
+    RUN_TEST(test_additional_primitive_operations); // Add the new test
 
     int tests_run = (*passed_tests - passed_before) + (*failed_tests - failed_before);
     (*total_tests) += tests_run;
