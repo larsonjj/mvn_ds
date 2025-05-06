@@ -9,6 +9,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
+
 #define MVN_INITIAL_CAPACITY 8
 #define MVN_GROWTH_FACTOR    2
 #define MVN_MAP_LOAD_FACTOR  0.75
@@ -901,4 +905,8 @@ void mvn_val_print(const mvn_val_t *value)
     }
 }
 
-#endif // MVN_DS_H
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
+
+#endif // MVN_DS_C

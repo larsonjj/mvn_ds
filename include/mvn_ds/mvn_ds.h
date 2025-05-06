@@ -6,6 +6,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
+
 // --- Forward Declarations ---
 typedef struct mvn_val_t        mvn_val_t;
 typedef struct mvn_string_t     mvn_string_t;
@@ -199,5 +203,9 @@ bool mvn_hmap_delete(mvn_hmap_t *hmap, const mvn_string_t *key);
  * @return true if the key was found and deleted, false otherwise.
  */
 bool mvn_hmap_delete_cstr(mvn_hmap_t *hmap, const char *key_cstr);
+
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
 
 #endif // MVN_DS_H
