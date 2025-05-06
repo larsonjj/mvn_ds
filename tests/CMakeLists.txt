@@ -42,8 +42,13 @@ set_target_properties(mvn_ds_test_build_all PROPERTIES EXCLUDE_FROM_ALL FALSE)
 # Make sure the meta-target depends on the main mvn target
 add_dependencies(mvn_ds_test_build_all mvn_ds)
 
+# Add C++ test
+add_executable(mvn_ds_cpp_test source/mvn_ds_cpp_test.cpp)
+target_link_libraries(mvn_ds_cpp_test PRIVATE mvn_ds::mvn_ds)
+
 ##### TESTS #####
 # Register all tests with CTest
 foreach(TARGET ${MVN_DS_TEST_TARGETS})
     add_test(NAME ${TARGET} COMMAND ${TARGET})
 endforeach()
+add_test(NAME mvn_ds_cpp_test COMMAND mvn_ds_cpp_test)

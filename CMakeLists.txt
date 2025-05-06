@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.22.1)
 project(mvn_ds
     VERSION 0.1.0
     DESCRIPTION "MVN Data Structures library"
-    LANGUAGES C)
+    LANGUAGES C CXX)
 
 # Options
 option(MVN_DS_BUILD_TESTS "Build MVN_ds tests" ON)
