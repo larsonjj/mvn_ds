@@ -21,21 +21,6 @@
 extern "C" {
 #endif /* __cplusplus */
 
-// --- Forward Declarations ---
-// No longer needed, structs defined in mvn_ds_types.h
-
-// --- Type Enum ---
-// Defined in mvn_ds_types.h
-
-// --- Generic Value ---
-// Defined in mvn_ds_types.h
-
-// --- Hash Map Entry ---
-// Defined in mvn_ds_types.h
-
-// --- Hash Map ---
-// Defined in mvn_ds_types.h
-
 // --- Value Constructors ---
 mvn_val_t mvn_val_null(void);
 mvn_val_t mvn_val_bool(bool b);
