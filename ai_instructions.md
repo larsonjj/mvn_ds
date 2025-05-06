@@ -38,7 +38,7 @@ typedef struct mvn_val_t {
         String* str;
         Array* arr;
         Hashmap* hmap;
-    } as;
+    };
 } mvn_val_t;
 
 // --- Dynamic String ---
