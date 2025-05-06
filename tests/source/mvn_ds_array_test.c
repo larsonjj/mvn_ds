@@ -335,6 +335,52 @@ static bool test_array_set_primitive_replacement(void)
     return true; // Test passed
 }
 
+/**
+ * @brief Tests operations on a NULL array pointer.
+ */
+static bool test_array_null_param_safety(void)
+{
+    mvn_val_t *get_val = mvn_array_get(NULL, 0);
+    TEST_ASSERT(get_val == NULL, "mvn_array_get(NULL, ...) should return NULL");
+
+    bool set_ok = mvn_array_set(NULL, 0, mvn_val_i32(1));
+    TEST_ASSERT(!set_ok, "mvn_array_set(NULL, ...) should return false");
+
+    bool push_ok = mvn_array_push(NULL, mvn_val_i32(1));
+    TEST_ASSERT(!push_ok, "mvn_array_push(NULL, ...) should return false");
+
+    // mvn_array_free(NULL) is already tested in test_array_free_null
+
+    return true; //    Test passed
+}
+
+/**
+ * @brief Tests setting a NULL value over an existing dynamic value.
+ */
+static bool test_array_set_null_over_dynamic(void)
+{
+    mvn_array_t *array_ptr = mvn_array_new();
+    TEST_ASSERT(array_ptr != NULL, "Failed to create array for set NULL over dynamic test");
+
+    // Push a dynamic value (string)
+    bool push_ok = mvn_array_push(array_ptr, mvn_val_string("to_be_freed"));
+    TEST_ASSERT(push_ok, "Pushing initial string failed");
+    TEST_ASSERT(array_ptr->count == 1, "Count should be 1 after push");
+
+    // Set MVN_VAL_NULL over the string. The string should be freed.
+    // This relies on memory checking tools (Valgrind/ASan) to confirm the free.
+    bool set_ok = mvn_array_set(array_ptr, 0, mvn_val_null());
+    TEST_ASSERT(set_ok, "Setting MVN_VAL_NULL over dynamic value failed");
+    TEST_ASSERT(array_ptr->count == 1, "Count should remain 1 after setting NULL");
+
+    mvn_val_t *val_after_set = mvn_array_get(array_ptr, 0);
+    TEST_ASSERT(val_after_set != NULL && val_after_set->type == MVN_VAL_NULL,
+                "Value at index 0 should be MVN_VAL_NULL after set");
+
+    mvn_array_free(array_ptr);
+    return true; //    Test passed (pending memory check for the freed string)
+}
+
 // --- Test Runner ---
 
 /**
@@ -359,6 +405,8 @@ int run_array_tests(int *passed_tests, int *failed_tests, int *total_tests)
     RUN_TEST(test_array_free_null);
     RUN_TEST(test_array_resize_from_zero);
     RUN_TEST(test_array_set_primitive_replacement);
+    RUN_TEST(test_array_null_param_safety);     // Added
+    RUN_TEST(test_array_set_null_over_dynamic); // Added
 
     int tests_run = (*passed_tests - passed_before) + (*failed_tests - failed_before);
     (*total_tests) += tests_run;
