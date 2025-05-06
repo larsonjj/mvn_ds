@@ -624,6 +624,74 @@ static bool test_hmap_key_cstr_with_embedded_null(void)
 // --- Test Runner ---
 
 /**
+ * @brief Tests the getter functions: mvn_hmap_get_count, mvn_hmap_get_capacity,
+ * mvn_hmap_is_empty, mvn_hmap_contains_key, mvn_hmap_contains_key_cstr.
+ */
+static bool test_hmap_getters(void)
+{
+    /* Copyright (c) 2024 Jake Larson */
+    mvn_hmap_t *hmap_ptr = NULL;
+
+    // Test with NULL map
+    TEST_ASSERT(mvn_hmap_get_count(NULL) == 0, "get_count(NULL) should be 0");
+    TEST_ASSERT(mvn_hmap_get_capacity(NULL) == 0, "get_capacity(NULL) should be 0");
+    TEST_ASSERT(mvn_hmap_is_empty(NULL), "is_empty(NULL) should be true");
+    TEST_ASSERT(!mvn_hmap_contains_key(NULL, NULL), "contains_key(NULL, NULL) should be false");
+    TEST_ASSERT(!mvn_hmap_contains_key_cstr(NULL, NULL),
+                "contains_key_cstr(NULL, NULL) should be false");
+
+    mvn_str_t *temp_key = mvn_str_new("temp");
+    TEST_ASSERT(temp_key != NULL, "Failed to create temp_key for getters test");
+    TEST_ASSERT(!mvn_hmap_contains_key(NULL, temp_key), "contains_key(NULL, key) should be false");
+    TEST_ASSERT(!mvn_hmap_contains_key_cstr(NULL, "temp_cstr"),
+                "contains_key_cstr(NULL, key_cstr) should be false");
+
+    // Test with empty map (default capacity)
+    hmap_ptr = mvn_hmap_new();
+    TEST_ASSERT(hmap_ptr != NULL, "Failed to create map for getters test");
+    TEST_ASSERT(mvn_hmap_get_count(hmap_ptr) == 0, "get_count on new map should be 0");
+    TEST_ASSERT(mvn_hmap_get_capacity(hmap_ptr) == MVN_DS_HMAP_INITIAL_CAPACITY,
+                "get_capacity on new map should be initial capacity");
+    TEST_ASSERT(mvn_hmap_is_empty(hmap_ptr), "is_empty on new map should be true");
+    TEST_ASSERT(!mvn_hmap_contains_key(hmap_ptr, temp_key),
+                "contains_key on empty map should be false");
+    TEST_ASSERT(!mvn_hmap_contains_key_cstr(hmap_ptr, "any_key"),
+                "contains_key_cstr on empty map should be false");
+    TEST_ASSERT(!mvn_hmap_contains_key(hmap_ptr, NULL), "contains_key(map, NULL) should be false");
+    TEST_ASSERT(!mvn_hmap_contains_key_cstr(hmap_ptr, NULL),
+                "contains_key_cstr(map, NULL) should be false");
+
+    // Add an element
+    mvn_hmap_set_cstr(hmap_ptr, "key1", mvn_val_i32(100));
+    TEST_ASSERT(mvn_hmap_get_count(hmap_ptr) == 1, "get_count should be 1 after set");
+    TEST_ASSERT(mvn_hmap_get_capacity(hmap_ptr) == MVN_DS_HMAP_INITIAL_CAPACITY,
+                "get_capacity should remain initial capacity");
+    TEST_ASSERT(!mvn_hmap_is_empty(hmap_ptr), "is_empty should be false after set");
+
+    TEST_ASSERT(mvn_hmap_contains_key_cstr(hmap_ptr, "key1"),
+                "contains_key_cstr for 'key1' should be true");
+    TEST_ASSERT(!mvn_hmap_contains_key_cstr(hmap_ptr, "non_existent_key"),
+                "contains_key_cstr for non-existent key should be false");
+
+    mvn_str_t *key1_str = mvn_str_new("key1");
+    TEST_ASSERT(key1_str != NULL, "Failed to create key1_str for getters test");
+    TEST_ASSERT(mvn_hmap_contains_key(hmap_ptr, key1_str),
+                "contains_key for key1_str should be true");
+    mvn_str_free(key1_str);
+
+    mvn_str_t *non_existent_str_key = mvn_str_new("non_existent_key");
+    TEST_ASSERT(non_existent_str_key != NULL, "Failed to create non_existent_str_key");
+    TEST_ASSERT(!mvn_hmap_contains_key(hmap_ptr, non_existent_str_key),
+                "contains_key for non_existent_str_key should be false");
+    mvn_str_free(non_existent_str_key);
+
+    mvn_hmap_free(hmap_ptr);
+    mvn_str_free(temp_key); // Free the standalone key used for NULL map tests
+
+    return true; // Test passed
+}
+
+/**
  * \brief           Run all hmap tests
  * \param[out]      passed_tests: Pointer to passed tests counter
  * \param[out]      failed_tests: Pointer to failed tests counter
@@ -652,6 +720,7 @@ int run_hmap_tests(int *passed_tests, int *failed_tests, int *total_tests)
     RUN_TEST(test_hmap_set_into_zero_capacity_map);  // Added
     RUN_TEST(test_hmap_set_empty_mvn_str_key);       // Added
     RUN_TEST(test_hmap_key_cstr_with_embedded_null); // Added
+    RUN_TEST(test_hmap_getters);                     // Added
 
     int tests_run = (*passed_tests - passed_before) + (*failed_tests - failed_before);
     (*total_tests) += tests_run;

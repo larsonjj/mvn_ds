@@ -445,3 +445,75 @@ bool mvn_hmap_delete_cstr(mvn_hmap_t *hmap, const char *key_cstr)
 
     return deleted;
 }
+
+/**
+ * @brief Returns the number of key-value pairs in the hash map.
+ * @param hmap The hash map. Can be NULL.
+ * @return The number of key-value pairs, or 0 if the map is NULL.
+ */
+size_t mvn_hmap_get_count(const mvn_hmap_t *hmap)
+{
+    /* Copyright (c) 2024 Jake Larson */
+    if (hmap == NULL) {
+        return 0;
+    }
+    return hmap->count;
+}
+
+/**
+ * @brief Returns the current capacity (number of buckets) of the hash map.
+ * @param hmap The hash map. Can be NULL.
+ * @return The capacity, or 0 if the map is NULL.
+ */
+size_t mvn_hmap_get_capacity(const mvn_hmap_t *hmap)
+{
+    /* Copyright (c) 2024 Jake Larson */
+    if (hmap == NULL) {
+        return 0;
+    }
+    return hmap->capacity;
+}
+
+/**
+ * @brief Checks if the hash map is empty.
+ * @param hmap The hash map. Can be NULL.
+ * @return true if the map is empty (or NULL), false otherwise.
+ */
+bool mvn_hmap_is_empty(const mvn_hmap_t *hmap)
+{
+    /* Copyright (c) 2024 Jake Larson */
+    if (hmap == NULL) {
+        return true; // A NULL map is considered empty
+    }
+    return hmap->count == 0;
+}
+
+/**
+ * @brief Checks if the hash map contains the given mvn_str_t key.
+ * @param hmap The hash map. Can be NULL.
+ * @param key The key to check for. Can be NULL.
+ * @return true if the key exists, false otherwise or if map/key is NULL.
+ */
+bool mvn_hmap_contains_key(const mvn_hmap_t *hmap, const mvn_str_t *key)
+{
+    /* Copyright (c) 2024 Jake Larson */
+    if (hmap == NULL || key == NULL) {
+        return false;
+    }
+    return mvn_hmap_get(hmap, key) != NULL;
+}
+
+/**
+ * @brief Checks if the hash map contains the given C string key.
+ * @param hmap The hash map. Can be NULL.
+ * @param key_cstr The C string key to check for. Can be NULL.
+ * @return true if the key exists, false otherwise or if map/key_cstr is NULL.
+ */
+bool mvn_hmap_contains_key_cstr(const mvn_hmap_t *hmap, const char *key_cstr)
+{
+    /* Copyright (c) 2024 Jake Larson */
+    if (hmap == NULL || key_cstr == NULL) {
+        return false;
+    }
+    return mvn_hmap_get_cstr(hmap, key_cstr) != NULL;
+}
