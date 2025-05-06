@@ -457,6 +457,55 @@ static bool test_array_new_slots_initialized_null(void)
     return true; // Test passed
 }
 
+/**
+ * @brief Tests the getter functions: mvn_arr_get_count, mvn_arr_get_capacity, mvn_arr_is_empty.
+ */
+static bool test_array_getters(void)
+{
+    /* Copyright (c) 2024 Jake Larson */
+    mvn_arr_t *array_ptr = NULL;
+
+    // Test with NULL array
+    TEST_ASSERT(mvn_arr_get_count(NULL) == 0, "get_count(NULL) should be 0");
+    TEST_ASSERT(mvn_arr_get_capacity(NULL) == 0, "get_capacity(NULL) should be 0");
+    TEST_ASSERT(mvn_arr_is_empty(NULL), "is_empty(NULL) should be true");
+
+    // Test with empty array (default capacity)
+    array_ptr = mvn_arr_new();
+    TEST_ASSERT(array_ptr != NULL, "Failed to create array for getters test");
+    TEST_ASSERT(mvn_arr_get_count(array_ptr) == 0, "get_count on new array should be 0");
+    TEST_ASSERT(mvn_arr_get_capacity(array_ptr) == MVN_DS_ARR_INITIAL_CAPACITY,
+                "get_capacity on new array should be initial capacity");
+    TEST_ASSERT(mvn_arr_is_empty(array_ptr), "is_empty on new array should be true");
+
+    // Push some elements
+    mvn_arr_push(array_ptr, mvn_val_i32(1));
+    mvn_arr_push(array_ptr, mvn_val_i32(2));
+    TEST_ASSERT(mvn_arr_get_count(array_ptr) == 2, "get_count should be 2 after pushes");
+    TEST_ASSERT(mvn_arr_get_capacity(array_ptr) == MVN_DS_ARR_INITIAL_CAPACITY,
+                "get_capacity should still be initial capacity");
+    TEST_ASSERT(!mvn_arr_is_empty(array_ptr), "is_empty should be false after pushes");
+
+    mvn_arr_free(array_ptr);
+
+    // Test with zero-capacity array
+    array_ptr = mvn_arr_new_capacity(0);
+    TEST_ASSERT(array_ptr != NULL, "Failed to create zero-capacity array for getters test");
+    TEST_ASSERT(mvn_arr_get_count(array_ptr) == 0, "get_count on zero-cap array should be 0");
+    TEST_ASSERT(mvn_arr_get_capacity(array_ptr) == 0, "get_capacity on zero-cap array should be 0");
+    TEST_ASSERT(mvn_arr_is_empty(array_ptr), "is_empty on zero-cap array should be true");
+
+    // Push to zero-capacity array to trigger resize
+    mvn_arr_push(array_ptr, mvn_val_i32(1));
+    TEST_ASSERT(mvn_arr_get_count(array_ptr) == 1, "get_count should be 1 after push to zero-cap");
+    TEST_ASSERT(mvn_arr_get_capacity(array_ptr) > 0,
+                "get_capacity should be > 0 after push to zero-cap");
+    TEST_ASSERT(!mvn_arr_is_empty(array_ptr), "is_empty should be false after push to zero-cap");
+
+    mvn_arr_free(array_ptr);
+    return true;
+}
+
 // --- Test Runner ---
 
 /**
@@ -485,6 +534,7 @@ int run_array_tests(int *passed_tests, int *failed_tests, int *total_tests)
     RUN_TEST(test_array_set_null_over_dynamic); // Added
     RUN_TEST(test_array_new_capacity_overflow);
     RUN_TEST(test_array_new_slots_initialized_null);
+    RUN_TEST(test_array_getters); // Added
 
     int tests_run = (*passed_tests - passed_before) + (*failed_tests - failed_before);
     (*total_tests) += tests_run;

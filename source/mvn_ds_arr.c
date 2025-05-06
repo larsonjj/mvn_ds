@@ -227,3 +227,45 @@ bool mvn_arr_set(mvn_arr_t *array, size_t index, mvn_val_t value)
     array->data[index] = value;
     return true;
 }
+
+/**
+ * @brief Returns the number of elements in the array.
+ * @param array The array. Can be NULL.
+ * @return The number of elements, or 0 if the array is NULL.
+ */
+size_t mvn_arr_get_count(const mvn_arr_t *array)
+{
+    /* Copyright (c) 2024 Jake Larson */
+    if (!array) {
+        return 0;
+    }
+    return array->count;
+}
+
+/**
+ * @brief Returns the current capacity of the array.
+ * @param array The array. Can be NULL.
+ * @return The capacity, or 0 if the array is NULL.
+ */
+size_t mvn_arr_get_capacity(const mvn_arr_t *array)
+{
+    /* Copyright (c) 2024 Jake Larson */
+    if (!array) {
+        return 0;
+    }
+    return array->capacity;
+}
+
+/**
+ * @brief Checks if the array is empty.
+ * @param array The array. Can be NULL.
+ * @return true if the array is empty (or NULL), false otherwise.
+ */
+bool mvn_arr_is_empty(const mvn_arr_t *array)
+{
+    /* Copyright (c) 2024 Jake Larson */
+    if (!array) {
+        return true; // A NULL array is considered empty
+    }
+    return array->count == 0;
+}
