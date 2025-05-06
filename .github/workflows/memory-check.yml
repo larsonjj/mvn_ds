@@ -27,7 +27,7 @@ jobs:
               working-directory: ${{github.workspace}}/build/tests
               run: |
                   # Find all test executables
-                  TEST_EXECUTABLES=$(find . -type f -executable -name "mvn_ds_test_*" -o -name "test_*")
+                  TEST_EXECUTABLES=$(find . -type f -executable -name "mvn_ds_*_test" -o -name "test_*")
 
                   if [ -z "$TEST_EXECUTABLES" ]; then
                     echo "No test executables found. Check test naming conventions."
@@ -60,7 +60,7 @@ jobs:
               run: |
                   mkdir -p reports
                   # Use the first found test executable for XML report
-                  TEST_EXEC=$(find . -type f -executable -name "mvn_ds_test_*" -o -name "test_*" | head -1)
+                  TEST_EXEC=$(find . -type f -executable -name "mvn_ds_*_test" -o -name "test_*" | head -1)
                   if [ -n "$TEST_EXEC" ]; then
                     echo "Generating XML report with $TEST_EXEC"
                     valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes --xml=yes --xml-file=reports/tests-valgrind.xml "$TEST_EXEC" || true
