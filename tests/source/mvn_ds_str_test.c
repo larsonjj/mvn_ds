@@ -6,6 +6,7 @@
 #include "mvn_ds/mvn_ds.h"
 #include "mvn_ds_test_utils.h"
 
+#include <limits.h> // For SIZE_MAX
 #include <stdbool.h>
 #include <stdint.h> // For uint32_t
 #include <stdio.h>
@@ -356,6 +357,51 @@ static bool test_string_val_take_null(void)
     return true; // Test passed
 }
 
+/**
+ * @brief Tests mvn_str_new_with_capacity with extremely large capacity values.
+ */
+static bool test_string_new_capacity_overflow(void)
+{
+    /* Copyright (c) 2024 Jake Larson */
+    mvn_str_t *str_overflow = NULL;
+
+    // If capacity is SIZE_MAX, capacity + 1 (for null terminator) will overflow size_t.
+    // The function should detect this (e.g., capacity >= SIZE_MAX) and return NULL.
+    str_overflow = mvn_str_new_with_capacity(SIZE_MAX);
+    TEST_ASSERT(
+        str_overflow == NULL,
+        "mvn_str_new_with_capacity(SIZE_MAX) should return NULL due to capacity + 1 overflow");
+
+    // Test with a capacity that is the largest possible before (capacity + 1) overflows.
+    // This is SIZE_MAX - 1. The allocation for data would be (SIZE_MAX - 1) + 1 = SIZE_MAX bytes.
+    // This allocation might still fail due to system memory limits,
+    // but it shouldn't be due to a size_t overflow in calculating allocation_size.
+    if (SIZE_MAX > 0) { // Ensure SIZE_MAX - 1 is a valid positive number
+        mvn_str_t *str_large_valid_capacity = mvn_str_new_with_capacity(SIZE_MAX - 1);
+        if (str_large_valid_capacity != NULL) {
+            // If this succeeds, it means an allocation of SIZE_MAX bytes was attempted and
+            // succeeded.
+            TEST_ASSERT(str_large_valid_capacity->capacity == SIZE_MAX - 1,
+                        "Capacity mismatch for mvn_str_new_with_capacity(SIZE_MAX - 1)");
+            TEST_ASSERT(str_large_valid_capacity->length == 0,
+                        "Length should be 0 for mvn_str_new_with_capacity(SIZE_MAX - 1)");
+            TEST_ASSERT(str_large_valid_capacity->data != NULL,
+                        "Data should not be NULL for mvn_str_new_with_capacity(SIZE_MAX - 1)");
+            TEST_ASSERT(
+                str_large_valid_capacity->data[0] == '\0',
+                "String should be null-terminated for mvn_str_new_with_capacity(SIZE_MAX - 1)");
+            mvn_str_free(str_large_valid_capacity);
+        } else {
+            // This is an acceptable outcome if the system cannot allocate SIZE_MAX bytes.
+            // The primary check is that it doesn't crash or misbehave due to overflow.
+            printf("Note: mvn_str_new_with_capacity(SIZE_MAX - 1) returned NULL (likely out of "
+                   "memory for %zu bytes).\n",
+                   SIZE_MAX);
+        }
+    }
+    return true; // Test passed
+}
+
 // --- Test Runner ---
 
 /**
@@ -381,7 +427,8 @@ int run_string_tests(int *passed_tests, int *failed_tests, int *total_tests)
     RUN_TEST(test_string_resize);
     RUN_TEST(test_string_hash);
     RUN_TEST(test_string_val_integration);
-    RUN_TEST(test_string_val_take_null); // Added
+    RUN_TEST(test_string_val_take_null);         // Added
+    RUN_TEST(test_string_new_capacity_overflow); // Added
 
     int tests_run = (*passed_tests - passed_before) + (*failed_tests - failed_before);
     (*total_tests) += tests_run;
