@@ -240,6 +240,130 @@ static bool test_hmap_ownership(void)
     return true; // Test passed (relies on memory checking tools for full verification)
 }
 
+// Helper to force collisions by controlling the hash result (for testing only)
+// NOTE: This relies on internal knowledge/assumptions about mvn_string_hash.
+// A more robust way might involve finding actual colliding strings or mocking.
+// For simplicity, let's assume we can find strings or use a very small map.
+static bool test_hmap_collisions(void)
+{
+    // Use a small capacity to increase likelihood/ease of collisions
+    mvn_hmap_t *hmap = mvn_hmap_new_with_capacity(2);
+    TEST_ASSERT(hmap != NULL, "Failed to create hash map for collision test");
+
+    // Assume "keyA" and "keyC" collide in a map of capacity 2 (hash % 2 is same)
+    // Assume "keyB" hashes to the other bucket.
+    // These are assumptions for the test; real collisions depend on the hash function.
+    // You might need to find actual colliding strings for your hash function.
+    const char *key_a_str = "keyA"; // e.g., hash(...) % 2 == 0
+    const char *key_b_str = "keyB"; // e.g., hash(...) % 2 == 1
+    const char *key_c_str = "keyC"; // e.g., hash(...) % 2 == 0
+
+    bool set_ok = true;
+    set_ok &= mvn_hmap_set_cstr(hmap, key_a_str, mvn_val_i32(1));
+    set_ok &= mvn_hmap_set_cstr(hmap, key_b_str, mvn_val_i32(2));
+    set_ok &= mvn_hmap_set_cstr(hmap, key_c_str, mvn_val_i32(3)); // Collides with keyA
+
+    TEST_ASSERT(set_ok, "Failed to set colliding keys");
+    TEST_ASSERT(hmap->count == 3, "Count should be 3 after setting colliding keys");
+    // Capacity might have grown due to resize logic during set
+    TEST_ASSERT(hmap->capacity >= 2, "Capacity check after collision");
+
+    // Verify all keys can be retrieved
+    mvn_val_t *val_a = mvn_hmap_get_cstr(hmap, key_a_str);
+    mvn_val_t *val_b = mvn_hmap_get_cstr(hmap, key_b_str);
+    mvn_val_t *val_c = mvn_hmap_get_cstr(hmap, key_c_str);
+
+    TEST_ASSERT(val_a != NULL && val_a->type == MVN_VAL_I32 && val_a->i32 == 1,
+                "Failed to get keyA after collision");
+    TEST_ASSERT(val_b != NULL && val_b->type == MVN_VAL_I32 && val_b->i32 == 2,
+                "Failed to get keyB after collision");
+    TEST_ASSERT(val_c != NULL && val_c->type == MVN_VAL_I32 && val_c->i32 == 3,
+                "Failed to get keyC after collision");
+
+    // Delete one of the colliding keys (e.g., keyA)
+    bool delete_ok = mvn_hmap_delete_cstr(hmap, key_a_str);
+    TEST_ASSERT(delete_ok, "Failed to delete keyA in collision chain");
+    TEST_ASSERT(hmap->count == 2, "Count should be 2 after deleting keyA");
+
+    // Verify keyA is gone, but keyB and keyC remain
+    val_a = mvn_hmap_get_cstr(hmap, key_a_str);
+    val_b = mvn_hmap_get_cstr(hmap, key_b_str);
+    val_c = mvn_hmap_get_cstr(hmap, key_c_str);
+    TEST_ASSERT(val_a == NULL, "keyA should be NULL after delete");
+    TEST_ASSERT(val_b != NULL && val_b->i32 == 2, "keyB retrieval failed after deleting keyA");
+    TEST_ASSERT(val_c != NULL && val_c->i32 == 3, "keyC retrieval failed after deleting keyA");
+
+    // Delete the other colliding key (keyC)
+    delete_ok = mvn_hmap_delete_cstr(hmap, key_c_str);
+    TEST_ASSERT(delete_ok, "Failed to delete keyC in collision chain");
+    TEST_ASSERT(hmap->count == 1, "Count should be 1 after deleting keyC");
+    val_c = mvn_hmap_get_cstr(hmap, key_c_str);
+    TEST_ASSERT(val_c == NULL, "keyC should be NULL after delete");
+    val_b = mvn_hmap_get_cstr(hmap, key_b_str); // Verify keyB still exists
+    TEST_ASSERT(val_b != NULL && val_b->i32 == 2, "keyB retrieval failed after deleting keyC");
+
+    mvn_hmap_free(hmap);
+    return true; // Test passed
+}
+
+static bool test_hmap_mvn_string_keys(void)
+{
+    mvn_hmap_t *hmap = mvn_hmap_new();
+    TEST_ASSERT(hmap != NULL, "Failed to create hash map for mvn_string key test");
+
+    // Create keys as mvn_string_t
+    mvn_string_t *key_one     = mvn_string_new("key_one_str");
+    mvn_string_t *key_two     = mvn_string_new("key_two_str");
+    mvn_string_t *key_one_dup = mvn_string_new("key_one_str"); // Same content, different object
+
+    TEST_ASSERT(key_one != NULL && key_two != NULL && key_one_dup != NULL,
+                "Failed to create mvn_string keys");
+
+    // Set using mvn_hmap_set (takes ownership of key_one and key_two)
+    bool set_ok = true;
+    set_ok &= mvn_hmap_set(hmap, key_one, mvn_val_i32(111));
+    set_ok &= mvn_hmap_set(hmap, key_two, mvn_val_f32(2.22f));
+
+    TEST_ASSERT(set_ok, "Failed to set using mvn_hmap_set");
+    TEST_ASSERT(hmap->count == 2, "Count should be 2 after mvn_hmap_set");
+
+    // Get using mvn_hmap_get (use key_one_dup to check content equality works)
+    mvn_val_t *val_one = mvn_hmap_get(hmap, key_one_dup);
+    mvn_val_t *val_two = mvn_hmap_get(hmap, key_two);
+
+    TEST_ASSERT(val_one != NULL && val_one->type == MVN_VAL_I32 && val_one->i32 == 111,
+                "Get key_one using mvn_hmap_get failed");
+    TEST_ASSERT(val_two != NULL && val_two->type == MVN_VAL_F32,
+                "Get key_two using mvn_hmap_get failed (type)");
+    TEST_ASSERT_FLOAT_EQ(val_two->f32, 2.22f, "Get key_two using mvn_hmap_get failed (value)");
+
+    // Try to set using a key that already exists (key_one_dup)
+    // mvn_hmap_set should free the provided key_one_dup because the map keeps its original key.
+    set_ok = mvn_hmap_set(hmap, key_one_dup, mvn_val_bool(false));
+    TEST_ASSERT(set_ok, "Replacing value using mvn_hmap_set failed");
+    TEST_ASSERT(hmap->count == 2, "Count should remain 2 after replace with mvn_hmap_set");
+    // key_one_dup is now freed by mvn_hmap_set, do not use it further.
+
+    // Verify the value was updated
+    val_one = mvn_hmap_get(hmap, key_one); // Use original key pointer still held by map
+    TEST_ASSERT(val_one != NULL && val_one->type == MVN_VAL_BOOL && val_one->b == false,
+                "Value not updated after replace with mvn_hmap_set");
+
+    // Delete using mvn_hmap_delete
+    mvn_string_t *key_two_lookup = mvn_string_new("key_two_str"); // Create another lookup key
+    bool          delete_ok      = mvn_hmap_delete(hmap, key_two_lookup);
+    TEST_ASSERT(delete_ok, "Delete using mvn_hmap_delete failed");
+    TEST_ASSERT(hmap->count == 1, "Count should be 1 after mvn_hmap_delete");
+    val_two = mvn_hmap_get(hmap, key_two); // Use original key pointer
+    TEST_ASSERT(val_two == NULL, "Value should be NULL after mvn_hmap_delete");
+
+    mvn_string_free(key_two_lookup); // Must free the lookup key manually
+    // key_one, key_two, key_one_dup were handled by the map (set/delete)
+
+    mvn_hmap_free(hmap); // Frees the remaining key ("key_one_str") and its value
+    return true;         // Test passed
+}
+
 // --- Test Runner ---
 
 /**
@@ -261,6 +385,8 @@ int run_hmap_tests(int *passed_tests, int *failed_tests, int *total_tests)
     RUN_TEST(test_hmap_delete);
     RUN_TEST(test_hmap_resize);
     RUN_TEST(test_hmap_ownership);
+    RUN_TEST(test_hmap_collisions);
+    RUN_TEST(test_hmap_mvn_string_keys);
 
     int tests_run = (*passed_tests - passed_before) + (*failed_tests - failed_before);
     (*total_tests) += tests_run;
