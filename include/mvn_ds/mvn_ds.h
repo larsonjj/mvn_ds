@@ -30,8 +30,8 @@ mvn_val_t mvn_val_f32(float f32);
 mvn_val_t mvn_val_f64(double f64);
 mvn_val_t mvn_val_string(const char *chars);      // Creates a new owned string
 mvn_val_t mvn_val_string_take(mvn_string_t *str); // Takes ownership of an existing string
-mvn_val_t mvn_val_array(void);                    // Creates a new empty owned array
-mvn_val_t mvn_val_array_take(mvn_array_t *arr);   // Takes ownership of an existing array
+mvn_val_t mvn_val_arr(void);                      // Creates a new empty owned array
+mvn_val_t mvn_val_arr_take(mvn_arr_t *arr);       // Takes ownership of an existing array
 mvn_val_t mvn_val_hmap(void);                     // Creates a new empty owned hash map
 mvn_val_t mvn_val_hmap_take(mvn_hmap_t *hmap);    // Takes ownership of an existing map
 

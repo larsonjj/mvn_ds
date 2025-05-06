@@ -21,7 +21,7 @@
  * @param new_size Desired new size. If 0, frees the pointer.
  * @return Pointer to the reallocated memory, or NULL if new_size is 0 or allocation fails.
  */
-static void *mvn_reallocate_array(void *pointer, size_t new_size)
+static void *mvn_reallocate_arr(void *pointer, size_t new_size)
 {
     // old_size is not needed for standard realloc
     if (new_size == 0) {
@@ -41,7 +41,7 @@ static void *mvn_reallocate_array(void *pointer, size_t new_size)
  * @param array The array to check/grow. Must not be NULL.
  * @return true if successful (or no resize needed), false on allocation failure.
  */
-static bool mvn_array_ensure_capacity(mvn_array_t *array)
+static bool mvn_arr_ensure_capacity(mvn_arr_t *array)
 {
     assert(array != NULL);
     if (array->count < array->capacity) {
@@ -74,9 +74,9 @@ static bool mvn_array_ensure_capacity(mvn_array_t *array)
     }
     size_t allocation_size = new_capacity * sizeof(mvn_val_t);
 
-    // Pass only pointer and new_size to the local mvn_reallocate_array
+    // Pass only pointer and new_size to the local mvn_reallocate_arr
     mvn_val_t *new_data =
-        (mvn_val_t *)mvn_reallocate_array(array->data, allocation_size); // Updated call site
+        (mvn_val_t *)mvn_reallocate_arr(array->data, allocation_size); // Updated call site
     if (!new_data) {
         return false;
     }
@@ -96,11 +96,11 @@ static bool mvn_array_ensure_capacity(mvn_array_t *array)
 /**
  * @brief Creates a new, empty dynamic array with a specific initial capacity.
  * @param capacity The initial capacity. If 0, no initial buffer is allocated.
- * @return A pointer to the new mvn_array_t, or NULL on allocation failure.
+ * @return A pointer to the new mvn_arr_t, or NULL on allocation failure.
  */
-mvn_array_t *mvn_array_new_with_capacity(size_t capacity)
+mvn_arr_t *mvn_arr_new_with_capacity(size_t capacity)
 {
-    mvn_array_t *array = (mvn_array_t *)MVN_DS_MALLOC(sizeof(mvn_array_t));
+    mvn_arr_t *array = (mvn_arr_t *)MVN_DS_MALLOC(sizeof(mvn_arr_t));
     if (!array) {
         return NULL;
     }
@@ -133,12 +133,12 @@ mvn_array_t *mvn_array_new_with_capacity(size_t capacity)
 /**
  * @brief Creates a new, empty dynamic array with a default initial capacity.
  * Uses MVN_DS_ARRAY_INITIAL_CAPACITY defined in the header.
- * @return A pointer to the new mvn_array_t, or NULL on allocation failure.
+ * @return A pointer to the new mvn_arr_t, or NULL on allocation failure.
  */
-mvn_array_t *mvn_array_new(void)
+mvn_arr_t *mvn_arr_new(void)
 {
     // Use MVN_DS_ARRAY_INITIAL_CAPACITY by default
-    return mvn_array_new_with_capacity(MVN_DS_ARRAY_INITIAL_CAPACITY);
+    return mvn_arr_new_with_capacity(MVN_DS_ARRAY_INITIAL_CAPACITY);
 }
 
 /**
@@ -147,7 +147,7 @@ mvn_array_t *mvn_array_new(void)
  * freeing the data buffer and the array structure itself.
  * @param array The array to free. Does nothing if NULL.
  */
-void mvn_array_free(mvn_array_t *array)
+void mvn_arr_free(mvn_arr_t *array)
 {
     if (!array) {
         return;
@@ -165,19 +165,19 @@ void mvn_array_free(mvn_array_t *array)
 /**
  * @brief Appends a value to the end of the array.
  * The array takes ownership of the value if it's a dynamic type (STRING, ARRAY, HASHMAP).
- * Resizes the array using mvn_array_ensure_capacity if necessary.
+ * Resizes the array using mvn_arr_ensure_capacity if necessary.
  * @param array The array to append to. Must not be NULL.
  * @param value The value to append. Ownership is transferred to the array.
  * @return true if successful, false on allocation failure or invalid input.
  */
-bool mvn_array_push(mvn_array_t *array, mvn_val_t value)
+bool mvn_arr_push(mvn_arr_t *array, mvn_val_t value)
 {
     if (!array) {
         // If array is NULL, we cannot take ownership, so free the value if needed.
         mvn_val_free(&value);
         return false;
     }
-    if (!mvn_array_ensure_capacity(array)) {
+    if (!mvn_arr_ensure_capacity(array)) {
         // If resize fails, we cannot take ownership, so free the value if needed.
         mvn_val_free(&value);
         return false;
@@ -196,7 +196,7 @@ bool mvn_array_push(mvn_array_t *array, mvn_val_t value)
  * @return A pointer to the mvn_val_t at the index, or NULL if array is NULL or index is out of
  * bounds.
  */
-mvn_val_t *mvn_array_get(const mvn_array_t *array, size_t index)
+mvn_val_t *mvn_arr_get(const mvn_arr_t *array, size_t index)
 {
     if (!array || index >= array->count) {
         return NULL;
@@ -214,7 +214,7 @@ mvn_val_t *mvn_array_get(const mvn_array_t *array, size_t index)
  * @return true if successful (index was valid), false otherwise (index out of bounds or invalid
  * input).
  */
-bool mvn_array_set(mvn_array_t *array, size_t index, mvn_val_t value)
+bool mvn_arr_set(mvn_arr_t *array, size_t index, mvn_val_t value)
 {
     if (!array || index >= array->count) {
         // If index is invalid, we cannot take ownership, so free the value if needed.

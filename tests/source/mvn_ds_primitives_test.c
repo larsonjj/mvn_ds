@@ -4,7 +4,7 @@
 #include "mvn_ds_primitives_test.h"
 
 #include "mvn_ds/mvn_ds.h"
-#include "mvn_ds/mvn_ds_array.h"  // For mvn_val_array
+#include "mvn_ds/mvn_ds_array.h"  // For mvn_val_arr
 #include "mvn_ds/mvn_ds_hmap.h"   // For mvn_val_hmap
 #include "mvn_ds/mvn_ds_string.h" // For mvn_val_string_borrow
 #include "mvn_ds_test_utils.h"
@@ -128,7 +128,7 @@ static bool test_additional_primitive_operations(void)
 
     mvn_val_t val_i32_sample  = mvn_val_i32(123);
     mvn_val_t val_str_sample  = mvn_val_string("sample"); // Changed from mvn_val_string_borrow
-    mvn_val_t val_arr_sample  = mvn_val_array();
+    mvn_val_t val_arr_sample  = mvn_val_arr();
     mvn_val_t val_hmap_sample = mvn_val_hmap();
 
     // Test mvn_val_equal with NULL mvn_val_t* pointers

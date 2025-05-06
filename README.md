@@ -8,9 +8,9 @@ A C99 compatible library providing a generic set of data structures, including d
 
 Key data types include:
 
-- `mvn_val_t`: A tagged union type that can hold various primitive types (`NULL`, `bool`, `int32_t`, `int64_t`, `float`, `double`), as well as dynamic `mvn_string_t`, `mvn_array_t`, and `mvn_hmap_t`.
+- `mvn_val_t`: A tagged union type that can hold various primitive types (`NULL`, `bool`, `int32_t`, `int64_t`, `float`, `double`), as well as dynamic `mvn_string_t`, `mvn_arr_t`, and `mvn_hmap_t`.
 - `mvn_string_t`: A dynamic string implementation.
-- `mvn_array_t`: A dynamic array (vector) implementation capable of storing `mvn_val_t` values, allowing for heterogeneous collections and nesting.
+- `mvn_arr_t`: A dynamic array (vector) implementation capable of storing `mvn_val_t` values, allowing for heterogeneous collections and nesting.
 - `mvn_hmap_t`: A hash map implementation using `mvn_string_t` keys and storing `mvn_val_t` values, also supporting nesting.
 
 ## Features
@@ -19,7 +19,7 @@ Key data types include:
 - **Generic Value Type**: `mvn_val_t` can hold primitives, strings, arrays, and hash maps.
 - **Dynamic Collections**:
   - Dynamic strings (`mvn_string_t`)
-  - Dynamic arrays (`mvn_array_t`)
+  - Dynamic arrays (`mvn_arr_t`)
   - String-key hash maps (`mvn_hmap_t`)
 - **Nesting**: Arrays and hash maps can contain other arrays and hash maps, allowing for complex, nested data structures.
 - **Ownership Semantics**: Data structures take ownership of the dynamic data they contain and are responsible for freeing it.

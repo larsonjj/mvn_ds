@@ -205,9 +205,9 @@ static bool test_hmap_ownership(void)
     TEST_ASSERT(hmap != NULL, "Failed to create hash map for ownership test");
 
     // Create nested structures
-    mvn_val_t inner_array_val = mvn_val_array();
-    mvn_array_push(inner_array_val.arr, mvn_val_i32(1));
-    mvn_array_push(inner_array_val.arr, mvn_val_string("nested_string"));
+    mvn_val_t inner_array_val = mvn_val_arr();
+    mvn_arr_push(inner_array_val.arr, mvn_val_i32(1));
+    mvn_arr_push(inner_array_val.arr, mvn_val_string("nested_string"));
 
     mvn_val_t inner_hmap_val = mvn_val_hmap();
     mvn_hmap_set_cstr(inner_hmap_val.hmap, "inner_key", mvn_val_bool(false));
@@ -232,8 +232,8 @@ static bool test_hmap_ownership(void)
 
     // Test delete ownership
     hmap = mvn_hmap_new();
-    mvn_hmap_set_cstr(hmap, "delete_me", mvn_val_array());
-    mvn_array_push(mvn_hmap_get_cstr(hmap, "delete_me")->arr, mvn_val_i32(1));
+    mvn_hmap_set_cstr(hmap, "delete_me", mvn_val_arr());
+    mvn_arr_push(mvn_hmap_get_cstr(hmap, "delete_me")->arr, mvn_val_i32(1));
     // This should free the array and its contents
     mvn_hmap_delete_cstr(hmap, "delete_me");
     mvn_hmap_free(hmap);

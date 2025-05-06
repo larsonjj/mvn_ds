@@ -111,12 +111,12 @@ mvn_val_t mvn_val_string_take(mvn_string_t *str)
 
 /**
  * @brief Creates an empty array value.
- * Allocates a new mvn_array_t internally.
+ * Allocates a new mvn_arr_t internally.
  * @return A mvn_val_t representing the array, or MVN_VAL_NULL on allocation failure.
  */
-mvn_val_t mvn_val_array(void)
+mvn_val_t mvn_val_arr(void)
 {
-    mvn_array_t *arr = mvn_array_new();
+    mvn_arr_t *arr = mvn_arr_new();
     if (!arr) {
         return mvn_val_null(); // Handle allocation failure
     }
@@ -124,12 +124,12 @@ mvn_val_t mvn_val_array(void)
 }
 
 /**
- * @brief Creates an array value by taking ownership of an existing mvn_array_t.
+ * @brief Creates an array value by taking ownership of an existing mvn_arr_t.
  * The provided array pointer will be managed by the mvn_val_t.
- * @param arr The mvn_array_t to take ownership of. If NULL, creates a NULL value.
+ * @param arr The mvn_arr_t to take ownership of. If NULL, creates a NULL value.
  * @return A mvn_val_t representing the array.
  */
-mvn_val_t mvn_val_array_take(mvn_array_t *arr)
+mvn_val_t mvn_val_arr_take(mvn_arr_t *arr)
 {
     if (!arr) {
         return mvn_val_null();
@@ -183,7 +183,7 @@ void mvn_val_free(mvn_val_t *value)
             mvn_string_free(value->str); // Calls function from mvn_ds_string.c
             break;
         case MVN_VAL_ARRAY:
-            mvn_array_free(value->arr); // Calls function from mvn_ds_array.c
+            mvn_arr_free(value->arr); // Calls function from mvn_ds_array.c
             break;
         case MVN_VAL_HASHMAP:
             mvn_hmap_free(value->hmap); // Calls function from mvn_ds_hmap.c
@@ -337,8 +337,8 @@ bool mvn_val_equal(const mvn_val_t *val_one, const mvn_val_t *val_two)
             // Use mvn_string_equal, handles NULL internal data pointers
             return mvn_string_equal(val_one->str, val_two->str);
         case MVN_VAL_ARRAY: {
-            mvn_array_t *arr_one = val_one->arr;
-            mvn_array_t *arr_two = val_two->arr;
+            mvn_arr_t *arr_one = val_one->arr;
+            mvn_arr_t *arr_two = val_two->arr;
 
             // Handle NULL array pointers within the value
             if (!arr_one && !arr_two) {
