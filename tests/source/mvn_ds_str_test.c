@@ -450,3 +450,46 @@ int main(void)
 
     return (failed > 0) ? 1 : 0;
 }
+
+/**
+ * @brief Creates a new string with a specific initial capacity.
+ * The allocated buffer will be capacity + 1 bytes for the null terminator.
+ * The initial string content is empty ("").
+ * @param capacity The initial capacity (excluding null terminator).
+ * @return A pointer to the new mvn_str_t, or NULL on allocation failure or if capacity is too
+ * large.
+ */
+mvn_str_t *mvn_str_new_with_capacity(size_t capacity)
+{
+    /* Copyright (c) 2024 Jake Larson */
+    // Prevent capacity + 1 from overflowing or becoming SIZE_MAX.
+    // If capacity is SIZE_MAX, capacity + 1 wraps to 0.
+    // If capacity is SIZE_MAX - 1, capacity + 1 is SIZE_MAX.
+    // Both are problematic: malloc(0) is implementation-defined, malloc(SIZE_MAX) is flagged by
+    // Valgrind.
+    if (capacity >= SIZE_MAX - 1) { // Check if capacity is SIZE_MAX or SIZE_MAX - 1
+        fprintf(stderr,
+                "[MVN_DS_STR] Requested capacity %zu is too large or would result in problematic "
+                "allocation size.\n",
+                capacity);
+        return NULL;
+    }
+
+    mvn_str_t *string_ptr = (mvn_str_t *)MVN_DS_MALLOC(sizeof(mvn_str_t));
+    if (!string_ptr) {
+        return NULL; // Malloc failure for the struct itself
+    }
+
+    size_t allocation_size = capacity + 1;                           // For null terminator
+    string_ptr->data       = (char *)MVN_DS_MALLOC(allocation_size); // This is line 103 from error
+    if (!string_ptr->data) {
+        MVN_DS_FREE(string_ptr);
+        return NULL; // Malloc failure for the data buffer
+    }
+
+    string_ptr->length   = 0;
+    string_ptr->capacity = capacity;
+    string_ptr->data[0]  = '\0'; // Null-terminate the empty string
+
+    return string_ptr;
+}
