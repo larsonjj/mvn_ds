@@ -24,7 +24,7 @@ extern "C" {
 mvn_arr_t *mvn_arr_new(void);
 
 // Creates a new, empty dynamic array with a specific initial capacity.
-mvn_arr_t *mvn_arr_new_with_capacity(size_t capacity);
+mvn_arr_t *mvn_arr_new_cap(size_t capacity);
 
 // Frees the memory associated with a dynamic array, including all contained values.
 void mvn_arr_free(mvn_arr_t *array);

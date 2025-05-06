@@ -27,7 +27,7 @@ extern "C" {
 mvn_hmap_t *mvn_hmap_new(void);
 
 // Creates a new, empty hash map with a specific initial capacity.
-mvn_hmap_t *mvn_hmap_new_with_capacity(size_t capacity);
+mvn_hmap_t *mvn_hmap_new_cap(size_t capacity);
 
 // Frees the memory associated with a hash map, including all keys and values.
 void mvn_hmap_free(mvn_hmap_t *hmap);

@@ -98,7 +98,7 @@ static bool mvn_arr_ensure_capacity(mvn_arr_t *array)
  * @param capacity The initial capacity. If 0, no initial buffer is allocated.
  * @return A pointer to the new mvn_arr_t, or NULL on allocation failure.
  */
-mvn_arr_t *mvn_arr_new_with_capacity(size_t capacity)
+mvn_arr_t *mvn_arr_new_cap(size_t capacity)
 {
     mvn_arr_t *array = (mvn_arr_t *)MVN_DS_MALLOC(sizeof(mvn_arr_t));
     if (!array) {
@@ -138,7 +138,7 @@ mvn_arr_t *mvn_arr_new_with_capacity(size_t capacity)
 mvn_arr_t *mvn_arr_new(void)
 {
     // Use MVN_DS_ARR_INITIAL_CAPACITY by default
-    return mvn_arr_new_with_capacity(MVN_DS_ARR_INITIAL_CAPACITY);
+    return mvn_arr_new_cap(MVN_DS_ARR_INITIAL_CAPACITY);
 }
 
 /**

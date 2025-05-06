@@ -26,7 +26,7 @@ static int test_array_creation_and_destruction(void)
     mvn_arr_free(array); // Should not crash
 
     // Test with specific initial capacity (e.g., 0)
-    array = mvn_arr_new_with_capacity(0);
+    array = mvn_arr_new_cap(0);
     TEST_ASSERT(array != NULL, "Failed to create array with capacity 0");
     TEST_ASSERT(array->count == 0, "New array (cap 0) count should be 0");
     TEST_ASSERT(array->capacity == 0, "New array (cap 0) capacity should be 0");
@@ -34,7 +34,7 @@ static int test_array_creation_and_destruction(void)
     mvn_arr_free(array);
 
     // Test with specific initial capacity > 0
-    array = mvn_arr_new_with_capacity(10);
+    array = mvn_arr_new_cap(10);
     TEST_ASSERT(array != NULL, "Failed to create array with capacity 10");
     TEST_ASSERT(array->count == 0, "New array (cap 10) count should be 0");
     TEST_ASSERT(array->capacity == 10, "New array (cap 10) capacity should be 10");
@@ -147,7 +147,7 @@ static int test_array_set(void)
 static int test_array_resize(void)
 {
     // Start with small capacity to force resize
-    mvn_arr_t *array = mvn_arr_new_with_capacity(2);
+    mvn_arr_t *array = mvn_arr_new_cap(2);
     TEST_ASSERT(array != NULL, "Failed to create array for resize test");
     TEST_ASSERT(array->capacity == 2, "Initial capacity should be 2");
 
@@ -280,7 +280,7 @@ static bool test_array_free_null(void)
  */
 static bool test_array_resize_from_zero(void)
 {
-    mvn_arr_t *zero_cap_array = mvn_arr_new_with_capacity(0);
+    mvn_arr_t *zero_cap_array = mvn_arr_new_cap(0);
     TEST_ASSERT(zero_cap_array != NULL, "Failed to create zero-capacity array");
     TEST_ASSERT(zero_cap_array->count == 0, "Initial count should be 0");
     TEST_ASSERT(zero_cap_array->capacity == 0, "Initial capacity should be 0");
