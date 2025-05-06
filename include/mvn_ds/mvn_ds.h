@@ -45,6 +45,9 @@ void mvn_val_print(const mvn_val_t *value);
 // Compares two mvn_val_t values for equality.
 bool mvn_val_equal(const mvn_val_t *val_one, const mvn_val_t *val_two);
 
+// Converts a mvn_val_type_t enum to its string representation.
+const char *mvn_val_type_to_str(mvn_val_type_t type);
+
 // --- Component Operations ---
 // Declarations are now in their respective headers (mvn_ds_str.h, etc.)
 

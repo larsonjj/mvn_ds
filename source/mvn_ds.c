@@ -208,6 +208,37 @@ void mvn_val_free(mvn_val_t *value)
 }
 
 /**
+ * @brief Converts a mvn_val_type_t enum to its string representation.
+ * @param type The mvn_val_type_t value.
+ * @return A string literal representing the type, or "UNKNOWN" for invalid types.
+ */
+const char *mvn_val_type_to_str(mvn_val_type_t type)
+{
+    switch (type) {
+        case MVN_VAL_NULL:
+            return "NULL";
+        case MVN_VAL_BOOL:
+            return "BOOL";
+        case MVN_VAL_I32:
+            return "I32";
+        case MVN_VAL_I64:
+            return "I64";
+        case MVN_VAL_F32:
+            return "F32";
+        case MVN_VAL_F64:
+            return "F64";
+        case MVN_VAL_STRING:
+            return "STRING";
+        case MVN_VAL_ARRAY:
+            return "ARRAY";
+        case MVN_VAL_HASHMAP:
+            return "HASHMAP";
+        default:
+            return "UNKNOWN";
+    }
+}
+
+/**
  * @brief Prints a representation of the value to stdout (for debugging).
  * Follows a JSON-like format. Handles NULL pointers gracefully.
  * @param value Pointer to the value to print.

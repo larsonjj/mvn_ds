@@ -6,6 +6,7 @@
 #include "mvn_ds/mvn_ds.h"
 #include "mvn_ds_test_utils.h"
 
+#include <limits.h>  // For SIZE_MAX
 #include <math.h>    // For fabsf, fabs
 #include <stdbool.h> // Include for bool type
 #include <stdio.h>
@@ -381,6 +382,81 @@ static bool test_array_set_null_over_dynamic(void)
     return true; //    Test passed (pending memory check for the freed string)
 }
 
+/**
+ * @brief Tests mvn_arr_new_capacity with extremely large capacity values that should fail.
+ */
+static bool test_array_new_capacity_overflow(void)
+{
+    mvn_arr_t *array_ptr = NULL;
+
+    // Test with SIZE_MAX, should definitely cause an overflow when calculating allocation size.
+    array_ptr = mvn_arr_new_capacity(SIZE_MAX);
+    TEST_ASSERT(array_ptr == NULL, "mvn_arr_new_capacity(SIZE_MAX) should return NULL");
+
+    // Test with a capacity that's just over the limit for sizeof(mvn_val_t).
+    // (SIZE_MAX / sizeof(mvn_val_t)) is the max number of elements. Add 1 to overflow.
+    if (sizeof(mvn_val_t) > 0) { // Avoid division by zero if sizeof(mvn_val_t) could be 0
+        size_t max_elements_plus_one = (SIZE_MAX / sizeof(mvn_val_t)) + 1;
+        // Ensure max_elements_plus_one actually overflowed if SIZE_MAX is perfectly divisible
+        if (max_elements_plus_one > 0) { // If it wrapped to 0, it's already too large
+            array_ptr = mvn_arr_new_capacity(max_elements_plus_one);
+            TEST_ASSERT(array_ptr == NULL,
+                        "mvn_arr_new_capacity just over max elements should return NULL");
+        }
+    }
+    return true; // Test passed
+}
+
+/**
+ * @brief Tests that newly allocated slots in the array are initialized to MVN_VAL_NULL.
+ */
+static bool test_array_new_slots_initialized_null(void)
+{
+    // Test initialization by mvn_arr_new_capacity
+    mvn_arr_t *array_ptr = mvn_arr_new_capacity(3);
+    TEST_ASSERT(array_ptr != NULL, "Failed to create array for slot initialization test");
+    TEST_ASSERT(array_ptr->count == 0, "Count should be 0");
+    TEST_ASSERT(array_ptr->capacity == 3, "Capacity should be 3");
+    TEST_ASSERT(array_ptr->data != NULL, "Data should not be NULL");
+
+    for (size_t i = 0; i < array_ptr->capacity; ++i) {
+        TEST_ASSERT(array_ptr->data[i].type == MVN_VAL_NULL,
+                    "Slot not initialized to MVN_VAL_NULL by mvn_arr_new_capacity");
+    }
+
+    // Push one element and check remaining uninitialized slots
+    bool push_ok = mvn_arr_push(array_ptr, mvn_val_i32(10));
+    TEST_ASSERT(push_ok, "Push failed");
+    TEST_ASSERT(array_ptr->count == 1, "Count should be 1");
+    for (size_t i = array_ptr->count; i < array_ptr->capacity; ++i) {
+        TEST_ASSERT(array_ptr->data[i].type == MVN_VAL_NULL,
+                    "Slot not MVN_VAL_NULL after one push");
+    }
+    mvn_arr_free(array_ptr);
+
+    // Test initialization by mvn_arr_ensure_capacity (triggered by push)
+    array_ptr = mvn_arr_new_capacity(1); // Start with capacity 1
+    TEST_ASSERT(array_ptr != NULL, "Failed to create array (cap 1)");
+    push_ok = mvn_arr_push(array_ptr, mvn_val_i32(20)); // Fill to capacity
+    TEST_ASSERT(push_ok, "Push to fill capacity 1 failed");
+    TEST_ASSERT(array_ptr->count == 1, "Count should be 1");
+    TEST_ASSERT(array_ptr->capacity == 1, "Capacity should be 1");
+
+    size_t old_capacity = array_ptr->capacity;
+    push_ok             = mvn_arr_push(array_ptr, mvn_val_i32(30)); // Trigger resize
+    TEST_ASSERT(push_ok, "Push to trigger resize failed");
+    TEST_ASSERT(array_ptr->count == 2, "Count should be 2 after resize");
+    TEST_ASSERT(array_ptr->capacity > old_capacity, "Capacity should have increased");
+
+    // Check slots from new count up to new capacity
+    for (size_t i = array_ptr->count; i < array_ptr->capacity; ++i) {
+        TEST_ASSERT(array_ptr->data[i].type == MVN_VAL_NULL, "Slot not MVN_VAL_NULL after resize");
+    }
+
+    mvn_arr_free(array_ptr);
+    return true; // Test passed
+}
+
 // --- Test Runner ---
 
 /**
@@ -407,6 +483,8 @@ int run_array_tests(int *passed_tests, int *failed_tests, int *total_tests)
     RUN_TEST(test_array_set_primitive_replacement);
     RUN_TEST(test_array_null_param_safety);     // Added
     RUN_TEST(test_array_set_null_over_dynamic); // Added
+    RUN_TEST(test_array_new_capacity_overflow);
+    RUN_TEST(test_array_new_slots_initialized_null);
 
     int tests_run = (*passed_tests - passed_before) + (*failed_tests - failed_before);
     (*total_tests) += tests_run;

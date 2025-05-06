@@ -6,6 +6,7 @@
 #include "mvn_ds/mvn_ds.h"
 #include "mvn_ds_test_utils.h"
 
+#include <limits.h> // For SIZE_MAX
 #include <math.h>
 #include <stdbool.h> // For bool type
 #include <stdio.h>
@@ -496,6 +497,130 @@ static bool test_hmap_operations_with_null_key(void)
     return true; // Test passed
 }
 
+/**
+ * @brief Tests mvn_hmap_new_capacity with extremely large capacity values that should fail.
+ */
+static bool test_hmap_new_capacity_overflow(void)
+{
+    mvn_hmap_t *hmap_ptr = NULL;
+
+    // Test with SIZE_MAX, should definitely cause an overflow.
+    // The actual point of failure might be before multiplication if capacity itself is too large
+    // for internal calculations, or during the multiplication for allocation size.
+    hmap_ptr = mvn_hmap_new_capacity(SIZE_MAX);
+    TEST_ASSERT(hmap_ptr == NULL, "mvn_hmap_new_capacity(SIZE_MAX) should return NULL");
+
+    // Test with a capacity that's just over the limit for sizeof(mvn_hmap_entry_t*) or similar
+    // internal structures. This is harder to pinpoint without knowing internal details, but
+    // SIZE_MAX / sizeof(void*) might be a proxy.
+    if (sizeof(void *) > 0) { // Avoid division by zero
+        size_t near_overflow_capacity = (SIZE_MAX / sizeof(void *)) + 1;
+        if (near_overflow_capacity > 0) { // Check if it wrapped
+            hmap_ptr = mvn_hmap_new_capacity(near_overflow_capacity);
+            TEST_ASSERT(hmap_ptr == NULL,
+                        "mvn_hmap_new_capacity with near_overflow_capacity should return NULL");
+        }
+    }
+    return true; // Test passed
+}
+
+/**
+ * @brief Tests setting elements into a hash map initially created with zero capacity.
+ */
+static bool test_hmap_set_into_zero_capacity_map(void)
+{
+    mvn_hmap_t *zero_cap_hmap = mvn_hmap_new_capacity(0);
+    TEST_ASSERT(zero_cap_hmap != NULL, "Failed to create zero-capacity hash map");
+    TEST_ASSERT(zero_cap_hmap->count == 0, "Initial count should be 0");
+    TEST_ASSERT(zero_cap_hmap->capacity == 0, "Initial capacity should be 0");
+    TEST_ASSERT(zero_cap_hmap->buckets == NULL, "Initial buckets should be NULL");
+
+    // First set should trigger allocation and resize
+    bool set_ok = mvn_hmap_set_cstr(zero_cap_hmap, "key1", mvn_val_i32(100));
+    TEST_ASSERT(set_ok, "Set into zero-capacity hash map failed");
+    TEST_ASSERT(zero_cap_hmap->count == 1, "Count should be 1 after first set");
+    TEST_ASSERT(zero_cap_hmap->capacity > 0, "Capacity should be > 0 after first set");
+    TEST_ASSERT(zero_cap_hmap->buckets != NULL, "Buckets should not be NULL after first set");
+
+    mvn_val_t *val_ptr = mvn_hmap_get_cstr(zero_cap_hmap, "key1");
+    TEST_ASSERT(val_ptr != NULL && val_ptr->type == MVN_VAL_I32 && val_ptr->i32 == 100,
+                "Value verification failed after set into zero-cap map");
+
+    // Add another to ensure it's stable
+    set_ok = mvn_hmap_set_cstr(zero_cap_hmap, "key2", mvn_val_str("value_two"));
+    TEST_ASSERT(set_ok, "Second set into zero-capacity hash map failed");
+    TEST_ASSERT(zero_cap_hmap->count == 2, "Count should be 2 after second set");
+
+    mvn_hmap_free(zero_cap_hmap);
+    return true; // Test passed
+}
+
+/**
+ * @brief Tests mvn_hmap_set with an mvn_str_t* key representing an empty string.
+ */
+static bool test_hmap_set_empty_mvn_str_key(void)
+{
+    mvn_hmap_t *hmap_ptr = mvn_hmap_new();
+    TEST_ASSERT(hmap_ptr != NULL, "Failed to create hash map for empty mvn_str_t key test");
+
+    mvn_str_t *empty_key_str = mvn_str_new(""); // Create an empty mvn_str_t
+    TEST_ASSERT(empty_key_str != NULL, "Failed to create empty mvn_str_t key");
+    TEST_ASSERT(empty_key_str->length == 0, "Empty mvn_str_t key length should be 0");
+
+    // Set with empty mvn_str_t key (mvn_hmap_set takes ownership)
+    bool set_ok = mvn_hmap_set(hmap_ptr, empty_key_str, mvn_val_i32(789));
+    TEST_ASSERT(set_ok, "Setting with empty mvn_str_t key failed");
+    TEST_ASSERT(hmap_ptr->count == 1, "Count should be 1 after setting empty mvn_str_t key");
+    // empty_key_str is now owned by hmap_ptr
+
+    // Get with another empty mvn_str_t key for lookup
+    mvn_str_t *lookup_empty_key_str = mvn_str_new("");
+    TEST_ASSERT(lookup_empty_key_str != NULL, "Failed to create lookup empty mvn_str_t");
+    mvn_val_t *val_ptr = mvn_hmap_get(hmap_ptr, lookup_empty_key_str);
+    TEST_ASSERT(val_ptr != NULL && val_ptr->type == MVN_VAL_I32 && val_ptr->i32 == 789,
+                "Getting with empty mvn_str_t key failed or value mismatch");
+    mvn_str_free(lookup_empty_key_str); // Free the lookup key
+
+    mvn_hmap_free(hmap_ptr); // Frees the map and the original empty_key_str
+    return true;             // Test passed
+}
+
+/**
+ * @brief Tests mvn_hmap_set_cstr with a C-string key containing an embedded null character.
+ */
+static bool test_hmap_key_cstr_with_embedded_null(void)
+{
+    mvn_hmap_t *hmap_ptr = mvn_hmap_new();
+    TEST_ASSERT(hmap_ptr != NULL, "Failed to create hmap for embedded null cstr key test");
+
+    const char *key_with_null_cstr = "abc\0def"; // Effective key should be "abc"
+    bool        set_ok = mvn_hmap_set_cstr(hmap_ptr, key_with_null_cstr, mvn_val_i32(111));
+    TEST_ASSERT(set_ok, "Setting with cstr key with embedded null failed");
+    TEST_ASSERT(hmap_ptr->count == 1, "Count should be 1");
+
+    // Try to get with "abc"
+    mvn_val_t *val_ptr = mvn_hmap_get_cstr(hmap_ptr, "abc");
+    TEST_ASSERT(val_ptr != NULL && val_ptr->type == MVN_VAL_I32 && val_ptr->i32 == 111,
+                "Getting with truncated key 'abc' failed");
+
+    // Try to get with the original pointer (should still effectively be "abc")
+    val_ptr = mvn_hmap_get_cstr(hmap_ptr, key_with_null_cstr);
+    TEST_ASSERT(val_ptr != NULL && val_ptr->type == MVN_VAL_I32 && val_ptr->i32 == 111,
+                "Getting with original cstr key with embedded null failed");
+
+    // Try to get with "abc\0def" (if lookup also truncates, this will find "abc")
+    val_ptr = mvn_hmap_get_cstr(hmap_ptr, "abc\0def");
+    TEST_ASSERT(val_ptr != NULL && val_ptr->type == MVN_VAL_I32 && val_ptr->i32 == 111,
+                "Getting with explicit 'abc\\0def' cstr key failed");
+
+    // Try to get with "abcdef" (should not be found)
+    val_ptr = mvn_hmap_get_cstr(hmap_ptr, "abcdef");
+    TEST_ASSERT(val_ptr == NULL, "Getting with 'abcdef' should not find the key");
+
+    mvn_hmap_free(hmap_ptr);
+    return true; // Test passed
+}
+
 // --- Test Runner ---
 
 /**
@@ -519,10 +644,14 @@ int run_hmap_tests(int *passed_tests, int *failed_tests, int *total_tests)
     RUN_TEST(test_hmap_ownership);
     RUN_TEST(test_hmap_collisions);
     RUN_TEST(test_hmap_mvn_str_keys);
-    RUN_TEST(test_hmap_free_null);                // Add new test run
-    RUN_TEST(test_hmap_empty_string_key);         // Add new test run
-    RUN_TEST(test_hmap_operations_on_null_map);   // Added
-    RUN_TEST(test_hmap_operations_with_null_key); // Added
+    RUN_TEST(test_hmap_free_null);
+    RUN_TEST(test_hmap_empty_string_key);
+    RUN_TEST(test_hmap_operations_on_null_map);
+    RUN_TEST(test_hmap_operations_with_null_key);
+    RUN_TEST(test_hmap_new_capacity_overflow);       // Added
+    RUN_TEST(test_hmap_set_into_zero_capacity_map);  // Added
+    RUN_TEST(test_hmap_set_empty_mvn_str_key);       // Added
+    RUN_TEST(test_hmap_key_cstr_with_embedded_null); // Added
 
     int tests_run = (*passed_tests - passed_before) + (*failed_tests - failed_before);
     (*total_tests) += tests_run;
