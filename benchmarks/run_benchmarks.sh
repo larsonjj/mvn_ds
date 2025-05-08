@@ -4,10 +4,10 @@ set -e
 
 # Define time limits for each benchmark (in seconds)
 declare -A BENCHMARK_LIMITS=(
-    ["mvn_ds_arr_benchmark"]=5
-    ["mvn_ds_hmap_benchmark"]=5
-    ["mvn_ds_string_benchmark"]=5
-    ["mvn_ds_primitives_benchmark"]=5
+    ["mvn_ds_arr_benchmark"]=1
+    ["mvn_ds_hmap_benchmark"]=1
+    ["mvn_ds_string_benchmark"]=1
+    ["mvn_ds_primitives_benchmark"]=1
 )
 
 # Directory containing the benchmark executables
