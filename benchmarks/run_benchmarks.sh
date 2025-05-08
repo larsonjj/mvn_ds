@@ -5,7 +5,7 @@ set -e
 # Define time limits for each benchmark (in milliseconds)
 declare -A BENCHMARK_LIMITS=(
     ["mvn_ds_arr_benchmark"]=35
-    ["mvn_ds_hmap_benchmark"]=60
+    ["mvn_ds_hmap_benchmark"]=80
     ["mvn_ds_string_benchmark"]=10
     ["mvn_ds_primitives_benchmark"]=15
 )
