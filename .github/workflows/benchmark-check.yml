@@ -1,0 +1,27 @@
+name: Benchmark Check
+
+on:
+    push:
+        branches: [main]
+    pull_request:
+        branches: [main]
+
+jobs:
+    run-benchmarks:
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+
+            - name: Install dependencies
+              run: sudo apt-get install -y cmake gcc g++
+
+            - name: Configure CMake
+              run: cmake -S . -B build -DMVN_DS_BUILD_BENCHMARKS=ON
+
+            - name: Build benchmarks
+              run: cmake --build build --target mvn_ds_benchmarks
+
+            - name: Run benchmarks with time limits
+              run: ./benchmarks/run_benchmarks.sh
