@@ -9,6 +9,7 @@ project(mvn_ds
 # Options
 option(MVN_DS_BUILD_TESTS "Build MVN_ds tests" ON)
 option(MVN_DS_WARNINGS_AS_ERRORS "Treat compiler warnings as errors" ON)
+option(MVN_DS_BUILD_BENCHMARKS "Build MVN_ds benchmarks" ON)
 
 # Suppress developer warnings
 set(CMAKE_SUPPRESS_DEVELOPER_WARNINGS 1 CACHE BOOL "Suppress developer warnings" FORCE)
@@ -123,4 +124,9 @@ install(FILES
 if(MVN_DS_BUILD_TESTS)
     enable_testing()
     add_subdirectory(tests)
+endif()
+
+# Add benchmarks if enabled
+if(MVN_DS_BUILD_BENCHMARKS)
+    add_subdirectory(benchmarks)
 endif()
