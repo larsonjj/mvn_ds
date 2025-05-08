@@ -52,7 +52,7 @@ static bool test_hmap_creation_and_destruction(void)
     return true; // Test passed
 }
 
-static bool test_hmap_set_get_basic(void)
+static bool test_hmap_set_basic(void)
 {
     mvn_hmap_t *hmap = mvn_hmap_new();
     TEST_ASSERT(hmap != NULL, "Failed to create hash map for set/get test");
@@ -67,28 +67,28 @@ static bool test_hmap_set_get_basic(void)
     TEST_ASSERT(set_ok, "Failed to set one or more values");
     TEST_ASSERT(hmap->count == 4, "Hash map count should be 4 after sets");
 
-    // Get and verify values using mvn_hmap_get_cstr
+    // Get and verify values using mvn_hmap_cstr
     mvn_val_t *val = NULL;
 
-    val = mvn_hmap_get_cstr(hmap, "key1");
+    val = mvn_hmap_cstr(hmap, "key1");
     TEST_ASSERT(val != NULL && val->type == MVN_VAL_I32 && val->i32 == 100,
                 "Get 'key1' failed or value mismatch");
 
-    val = mvn_hmap_get_cstr(hmap, "key2");
+    val = mvn_hmap_cstr(hmap, "key2");
     TEST_ASSERT(val != NULL && val->type == MVN_VAL_STRING && val->str != NULL &&
                     strcmp(val->str->data, "value2") == 0,
                 "Get 'key2' failed or value mismatch");
 
-    val = mvn_hmap_get_cstr(hmap, "enabled");
+    val = mvn_hmap_cstr(hmap, "enabled");
     TEST_ASSERT(val != NULL && val->type == MVN_VAL_BOOL && val->b == true,
                 "Get 'enabled' failed or value mismatch");
 
-    val = mvn_hmap_get_cstr(hmap, "pi");
+    val = mvn_hmap_cstr(hmap, "pi");
     TEST_ASSERT(val != NULL && val->type == MVN_VAL_F64, "Get 'pi' failed or type mismatch");
     TEST_ASSERT_DOUBLE_EQ(val->f64, 3.14159, "Get 'pi' value mismatch");
 
     // Test getting a non-existent key
-    val = mvn_hmap_get_cstr(hmap, "nonexistent");
+    val = mvn_hmap_cstr(hmap, "nonexistent");
     TEST_ASSERT(val == NULL, "Getting non-existent key should return NULL");
 
     mvn_hmap_free(hmap);
@@ -103,7 +103,7 @@ static bool test_hmap_set_replace(void)
     mvn_hmap_set_cstr(hmap, "mykey", mvn_val_i32(1));
     TEST_ASSERT(hmap->count == 1, "Count should be 1 initially");
 
-    mvn_val_t *val = mvn_hmap_get_cstr(hmap, "mykey");
+    mvn_val_t *val = mvn_hmap_cstr(hmap, "mykey");
     TEST_ASSERT(val != NULL && val->type == MVN_VAL_I32 && val->i32 == 1, "Initial get failed");
 
     // Replace the value with a different type
@@ -111,7 +111,7 @@ static bool test_hmap_set_replace(void)
     TEST_ASSERT(set_ok, "Replacing value failed");
     TEST_ASSERT(hmap->count == 1, "Count should remain 1 after replace");
 
-    val = mvn_hmap_get_cstr(hmap, "mykey");
+    val = mvn_hmap_cstr(hmap, "mykey");
     TEST_ASSERT(val != NULL && val->type == MVN_VAL_STRING && val->str != NULL &&
                     strcmp(val->str->data, "new_value") == 0,
                 "Get after replace failed or value mismatch");
@@ -134,11 +134,11 @@ static bool test_hmap_delete(void)
     TEST_ASSERT(delete_ok, "Deleting existing key failed");
     TEST_ASSERT(hmap->count == 1, "Count should be 1 after delete");
 
-    mvn_val_t *val = mvn_hmap_get_cstr(hmap, "key_to_delete");
+    mvn_val_t *val = mvn_hmap_cstr(hmap, "key_to_delete");
     TEST_ASSERT(val == NULL, "Getting deleted key should return NULL");
 
     // Verify other key is still present
-    val = mvn_hmap_get_cstr(hmap, "key_to_keep");
+    val = mvn_hmap_cstr(hmap, "key_to_keep");
     TEST_ASSERT(val != NULL && val->type == MVN_VAL_STRING, "Other key was affected by delete");
 
     // Delete non-existent key
@@ -171,8 +171,8 @@ static bool test_hmap_resize(void)
     size_t capacity_after_resize = hmap->capacity;
 
     // Verify data integrity after resize
-    mvn_val_t *val1 = mvn_hmap_get_cstr(hmap, "key1");
-    mvn_val_t *val2 = mvn_hmap_get_cstr(hmap, "key2");
+    mvn_val_t *val1 = mvn_hmap_cstr(hmap, "key1");
+    mvn_val_t *val2 = mvn_hmap_cstr(hmap, "key2");
     TEST_ASSERT(val1 != NULL && val1->type == MVN_VAL_I32 && val1->i32 == 1,
                 "Value 'key1' incorrect after resize");
     TEST_ASSERT(val2 != NULL && val2->type == MVN_VAL_I32 && val2->i32 == 2,
@@ -191,7 +191,7 @@ static bool test_hmap_resize(void)
     // Verify all data again
     for (int i = 1; i <= 10; ++i) {
         snprintf(key_buffer, sizeof(key_buffer), "key%d", i);
-        mvn_val_t *val = mvn_hmap_get_cstr(hmap, key_buffer);
+        mvn_val_t *val = mvn_hmap_cstr(hmap, key_buffer);
         TEST_ASSERT(val != NULL && val->type == MVN_VAL_I32 && val->i32 == i,
                     "Data verification failed after multiple resizes");
     }
@@ -234,7 +234,7 @@ static bool test_hmap_ownership(void)
     // Test delete ownership
     hmap = mvn_hmap_new();
     mvn_hmap_set_cstr(hmap, "delete_me", mvn_val_arr());
-    mvn_arr_push(mvn_hmap_get_cstr(hmap, "delete_me")->arr, mvn_val_i32(1));
+    mvn_arr_push(mvn_hmap_cstr(hmap, "delete_me")->arr, mvn_val_i32(1));
     // This should free the array and its contents
     mvn_hmap_delete_cstr(hmap, "delete_me");
     mvn_hmap_free(hmap);
@@ -271,9 +271,9 @@ static bool test_hmap_collisions(void)
     TEST_ASSERT(hmap->capacity >= 2, "Capacity check after collision");
 
     // Verify all keys can be retrieved
-    mvn_val_t *val_a = mvn_hmap_get_cstr(hmap, key_a_str);
-    mvn_val_t *val_b = mvn_hmap_get_cstr(hmap, key_b_str);
-    mvn_val_t *val_c = mvn_hmap_get_cstr(hmap, key_c_str);
+    mvn_val_t *val_a = mvn_hmap_cstr(hmap, key_a_str);
+    mvn_val_t *val_b = mvn_hmap_cstr(hmap, key_b_str);
+    mvn_val_t *val_c = mvn_hmap_cstr(hmap, key_c_str);
 
     TEST_ASSERT(val_a != NULL && val_a->type == MVN_VAL_I32 && val_a->i32 == 1,
                 "Failed to get keyA after collision");
@@ -288,9 +288,9 @@ static bool test_hmap_collisions(void)
     TEST_ASSERT(hmap->count == 2, "Count should be 2 after deleting keyA");
 
     // Verify keyA is gone, but keyB and keyC remain
-    val_a = mvn_hmap_get_cstr(hmap, key_a_str);
-    val_b = mvn_hmap_get_cstr(hmap, key_b_str);
-    val_c = mvn_hmap_get_cstr(hmap, key_c_str);
+    val_a = mvn_hmap_cstr(hmap, key_a_str);
+    val_b = mvn_hmap_cstr(hmap, key_b_str);
+    val_c = mvn_hmap_cstr(hmap, key_c_str);
     TEST_ASSERT(val_a == NULL, "keyA should be NULL after delete");
     TEST_ASSERT(val_b != NULL && val_b->i32 == 2, "keyB retrieval failed after deleting keyA");
     TEST_ASSERT(val_c != NULL && val_c->i32 == 3, "keyC retrieval failed after deleting keyA");
@@ -299,9 +299,9 @@ static bool test_hmap_collisions(void)
     delete_ok = mvn_hmap_delete_cstr(hmap, key_c_str);
     TEST_ASSERT(delete_ok, "Failed to delete keyC in collision chain");
     TEST_ASSERT(hmap->count == 1, "Count should be 1 after deleting keyC");
-    val_c = mvn_hmap_get_cstr(hmap, key_c_str);
+    val_c = mvn_hmap_cstr(hmap, key_c_str);
     TEST_ASSERT(val_c == NULL, "keyC should be NULL after delete");
-    val_b = mvn_hmap_get_cstr(hmap, key_b_str); // Verify keyB still exists
+    val_b = mvn_hmap_cstr(hmap, key_b_str); // Verify keyB still exists
     TEST_ASSERT(val_b != NULL && val_b->i32 == 2, "keyB retrieval failed after deleting keyC");
 
     mvn_hmap_free(hmap);
@@ -390,7 +390,7 @@ static bool test_hmap_empty_string_key(void)
     TEST_ASSERT(hmap->count == 1, "Count should be 1 after setting empty string key");
 
     // Get with empty string key
-    mvn_val_t *val = mvn_hmap_get_cstr(hmap, "");
+    mvn_val_t *val = mvn_hmap_cstr(hmap, "");
     TEST_ASSERT(val != NULL && val->type == MVN_VAL_I32 && val->i32 == 123,
                 "Getting with empty string key failed or value mismatch");
 
@@ -405,11 +405,11 @@ static bool test_hmap_empty_string_key(void)
     TEST_ASSERT(hmap->count == 1, "Count should be 1 after deleting empty string key");
 
     // Verify empty string key is gone
-    val = mvn_hmap_get_cstr(hmap, "");
+    val = mvn_hmap_cstr(hmap, "");
     TEST_ASSERT(val == NULL, "Empty string key should be NULL after delete");
 
     // Verify other key remains
-    val = mvn_hmap_get_cstr(hmap, "other");
+    val = mvn_hmap_cstr(hmap, "other");
     TEST_ASSERT(val != NULL && val->type == MVN_VAL_BOOL && val->b == true,
                 "Other key retrieval failed after deleting empty string key");
 
@@ -439,8 +439,8 @@ static bool test_hmap_operations_on_null_map(void)
     TEST_ASSERT(!delete_flag, "mvn_hmap_delete(NULL, key) should return false");
 
     // Test _cstr variants with NULL map
-    got_val = mvn_hmap_get_cstr(NULL, "anyKeyCstr");
-    TEST_ASSERT(got_val == NULL, "mvn_hmap_get_cstr(NULL, key_cstr) should return NULL");
+    got_val = mvn_hmap_cstr(NULL, "anyKeyCstr");
+    TEST_ASSERT(got_val == NULL, "mvn_hmap_cstr(NULL, key_cstr) should return NULL");
 
     set_flag = mvn_hmap_set_cstr(NULL, "anyKeyCstr", temp_value);
     TEST_ASSERT(!set_flag, "mvn_hmap_set_cstr(NULL, key_cstr, val) should return false");
@@ -479,8 +479,8 @@ static bool test_hmap_operations_with_null_key(void)
     TEST_ASSERT(hmap_ptr->count == 0, "Map count should be 0 after failed delete with NULL key");
 
     // Test _cstr variants with NULL key_cstr
-    got_val = mvn_hmap_get_cstr(hmap_ptr, NULL);
-    TEST_ASSERT(got_val == NULL, "mvn_hmap_get_cstr(map, NULL) should return NULL");
+    got_val = mvn_hmap_cstr(hmap_ptr, NULL);
+    TEST_ASSERT(got_val == NULL, "mvn_hmap_cstr(map, NULL) should return NULL");
 
     set_flag = mvn_hmap_set_cstr(hmap_ptr, NULL, temp_value);
     TEST_ASSERT(!set_flag, "mvn_hmap_set_cstr(map, NULL, val) should return false");
@@ -542,7 +542,7 @@ static bool test_hmap_set_into_zero_capacity_map(void)
     TEST_ASSERT(zero_cap_hmap->capacity > 0, "Capacity should be > 0 after first set");
     TEST_ASSERT(zero_cap_hmap->buckets != NULL, "Buckets should not be NULL after first set");
 
-    mvn_val_t *val_ptr = mvn_hmap_get_cstr(zero_cap_hmap, "key1");
+    mvn_val_t *val_ptr = mvn_hmap_cstr(zero_cap_hmap, "key1");
     TEST_ASSERT(val_ptr != NULL && val_ptr->type == MVN_VAL_I32 && val_ptr->i32 == 100,
                 "Value verification failed after set into zero-cap map");
 
@@ -599,22 +599,22 @@ static bool test_hmap_key_cstr_with_embedded_null(void)
     TEST_ASSERT(hmap_ptr->count == 1, "Count should be 1");
 
     // Try to get with "abc"
-    mvn_val_t *val_ptr = mvn_hmap_get_cstr(hmap_ptr, "abc");
+    mvn_val_t *val_ptr = mvn_hmap_cstr(hmap_ptr, "abc");
     TEST_ASSERT(val_ptr != NULL && val_ptr->type == MVN_VAL_I32 && val_ptr->i32 == 111,
                 "Getting with truncated key 'abc' failed");
 
     // Try to get with the original pointer (should still effectively be "abc")
-    val_ptr = mvn_hmap_get_cstr(hmap_ptr, key_with_null_cstr);
+    val_ptr = mvn_hmap_cstr(hmap_ptr, key_with_null_cstr);
     TEST_ASSERT(val_ptr != NULL && val_ptr->type == MVN_VAL_I32 && val_ptr->i32 == 111,
                 "Getting with original cstr key with embedded null failed");
 
     // Try to get with "abc\0def" (if lookup also truncates, this will find "abc")
-    val_ptr = mvn_hmap_get_cstr(hmap_ptr, "abc\0def");
+    val_ptr = mvn_hmap_cstr(hmap_ptr, "abc\0def");
     TEST_ASSERT(val_ptr != NULL && val_ptr->type == MVN_VAL_I32 && val_ptr->i32 == 111,
                 "Getting with explicit 'abc\\0def' cstr key failed");
 
     // Try to get with "abcdef" (should not be found)
-    val_ptr = mvn_hmap_get_cstr(hmap_ptr, "abcdef");
+    val_ptr = mvn_hmap_cstr(hmap_ptr, "abcdef");
     TEST_ASSERT(val_ptr == NULL, "Getting with 'abcdef' should not find the key");
 
     mvn_hmap_free(hmap_ptr);
@@ -624,7 +624,7 @@ static bool test_hmap_key_cstr_with_embedded_null(void)
 // --- Test Runner ---
 
 /**
- * @brief Tests the getter functions: mvn_hmap_get_count, mvn_hmap_get_capacity,
+ * @brief Tests the getter functions: mvn_hmap_count, mvn_hmap_capacity,
  * mvn_hmap_is_empty, mvn_hmap_contains_key, mvn_hmap_contains_key_cstr.
  */
 static bool test_hmap_getters(void)
@@ -633,8 +633,8 @@ static bool test_hmap_getters(void)
     mvn_hmap_t *hmap_ptr = NULL;
 
     // Test with NULL map
-    TEST_ASSERT(mvn_hmap_get_count(NULL) == 0, "get_count(NULL) should be 0");
-    TEST_ASSERT(mvn_hmap_get_capacity(NULL) == 0, "get_capacity(NULL) should be 0");
+    TEST_ASSERT(mvn_hmap_count(NULL) == 0, "get_count(NULL) should be 0");
+    TEST_ASSERT(mvn_hmap_capacity(NULL) == 0, "get_capacity(NULL) should be 0");
     TEST_ASSERT(mvn_hmap_is_empty(NULL), "is_empty(NULL) should be true");
     TEST_ASSERT(!mvn_hmap_contains_key(NULL, NULL), "contains_key(NULL, NULL) should be false");
     TEST_ASSERT(!mvn_hmap_contains_key_cstr(NULL, NULL),
@@ -649,8 +649,8 @@ static bool test_hmap_getters(void)
     // Test with empty map (default capacity)
     hmap_ptr = mvn_hmap_new();
     TEST_ASSERT(hmap_ptr != NULL, "Failed to create map for getters test");
-    TEST_ASSERT(mvn_hmap_get_count(hmap_ptr) == 0, "get_count on new map should be 0");
-    TEST_ASSERT(mvn_hmap_get_capacity(hmap_ptr) == MVN_DS_HMAP_INITIAL_CAPACITY,
+    TEST_ASSERT(mvn_hmap_count(hmap_ptr) == 0, "get_count on new map should be 0");
+    TEST_ASSERT(mvn_hmap_capacity(hmap_ptr) == MVN_DS_HMAP_INITIAL_CAPACITY,
                 "get_capacity on new map should be initial capacity");
     TEST_ASSERT(mvn_hmap_is_empty(hmap_ptr), "is_empty on new map should be true");
     TEST_ASSERT(!mvn_hmap_contains_key(hmap_ptr, temp_key),
@@ -663,8 +663,8 @@ static bool test_hmap_getters(void)
 
     // Add an element
     mvn_hmap_set_cstr(hmap_ptr, "key1", mvn_val_i32(100));
-    TEST_ASSERT(mvn_hmap_get_count(hmap_ptr) == 1, "get_count should be 1 after set");
-    TEST_ASSERT(mvn_hmap_get_capacity(hmap_ptr) == MVN_DS_HMAP_INITIAL_CAPACITY,
+    TEST_ASSERT(mvn_hmap_count(hmap_ptr) == 1, "get_count should be 1 after set");
+    TEST_ASSERT(mvn_hmap_capacity(hmap_ptr) == MVN_DS_HMAP_INITIAL_CAPACITY,
                 "get_capacity should remain initial capacity");
     TEST_ASSERT(!mvn_hmap_is_empty(hmap_ptr), "is_empty should be false after set");
 
@@ -705,7 +705,7 @@ int run_hmap_tests(int *passed_tests, int *failed_tests, int *total_tests)
     int failed_before = *failed_tests;
 
     RUN_TEST(test_hmap_creation_and_destruction);
-    RUN_TEST(test_hmap_set_get_basic);
+    RUN_TEST(test_hmap_set_basic);
     RUN_TEST(test_hmap_set_replace);
     RUN_TEST(test_hmap_delete);
     RUN_TEST(test_hmap_resize);

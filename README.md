@@ -95,12 +95,12 @@ int main() {
     mvn_str_t* my_string = mvn_str_new("Hello, mvn_ds!");
     if (my_string) {
         printf("String: %s (Length: %zu, Capacity: %zu)\n",
-               mvn_str_get_data(my_string),
-               mvn_str_get_length(my_string),
-               mvn_str_get_capacity(my_string));
+               mvn_str_data(my_string),
+               mvn_str_length(my_string),
+               mvn_str_capacity(my_string));
 
         mvn_str_append_cstr(my_string, " Appended text.");
-        printf("Updated String: %s\n", mvn_str_get_data(my_string));
+        printf("Updated String: %s\n", mvn_str_data(my_string));
 
         mvn_str_free(my_string);
     }
@@ -123,7 +123,7 @@ int main() {
     }
 
     if (val_message.type == MVN_VAL_STRING && val_message.str != NULL) {
-        printf("String value: %s\n", mvn_str_get_data(val_message.str));
+        printf("String value: %s\n", mvn_str_data(val_message.str));
     }
 
     // mvn_val_free will handle freeing the string data for val_message
@@ -183,9 +183,9 @@ int main() {
     mvn_arr_push(my_array, mvn_val_str("An array element"));
     mvn_arr_push(my_array, mvn_val_bool(false));
 
-    printf("Array count: %zu\n", mvn_arr_get_count(my_array));
+    printf("Array count: %zu\n", mvn_arr_count(my_array));
 
-    for (size_t i = 0; i < mvn_arr_get_count(my_array); ++i) {
+    for (size_t i = 0; i < mvn_arr_count(my_array); ++i) {
         mvn_val_t* val_item = mvn_arr_get(my_array, i);
         printf("Array[%zu]: ", i);
         mvn_val_print(val_item); // Simple print for demonstration
@@ -212,14 +212,14 @@ int main() {
     mvn_hmap_set_cstr(my_map, "version", mvn_val_f32(0.1f));
     mvn_hmap_set_cstr(my_map, "active", mvn_val_bool(true));
 
-    printf("Map count: %zu\n", mvn_hmap_get_count(my_map));
+    printf("Map count: %zu\n", mvn_hmap_count(my_map));
 
-    mvn_val_t* name_val = mvn_hmap_get_cstr(my_map, "name");
+    mvn_val_t* name_val = mvn_hmap_cstr(my_map, "name");
     if (name_val && name_val->type == MVN_VAL_STRING) {
-        printf("Name: %s\n", mvn_str_get_data(name_val->str));
+        printf("Name: %s\n", mvn_str_data(name_val->str));
     }
 
-    mvn_val_t* version_val = mvn_hmap_get_cstr(my_map, "version");
+    mvn_val_t* version_val = mvn_hmap_cstr(my_map, "version");
     if (version_val && version_val->type == MVN_VAL_F32) {
         printf("Version: %.1f\n", version_val->f32);
     }

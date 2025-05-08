@@ -233,7 +233,7 @@ bool mvn_arr_set(mvn_arr_t *array, size_t index, mvn_val_t value)
  * @param array The array. Can be NULL.
  * @return The number of elements, or 0 if the array is NULL.
  */
-size_t mvn_arr_get_count(const mvn_arr_t *array)
+size_t mvn_arr_count(const mvn_arr_t *array)
 {
     if (!array) {
         return 0;
@@ -246,7 +246,7 @@ size_t mvn_arr_get_count(const mvn_arr_t *array)
  * @param array The array. Can be NULL.
  * @return The capacity, or 0 if the array is NULL.
  */
-size_t mvn_arr_get_capacity(const mvn_arr_t *array)
+size_t mvn_arr_capacity(const mvn_arr_t *array)
 {
     if (!array) {
         return 0;

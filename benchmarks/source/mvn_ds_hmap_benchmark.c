@@ -26,7 +26,7 @@ int main()
     for (size_t i = 0; i < num_elements; ++i) {
         char key[32];
         snprintf(key, sizeof(key), "key%zu", i);
-        mvn_val_t *val = mvn_hmap_get_cstr(hmap, key);
+        mvn_val_t *val = mvn_hmap_cstr(hmap, key);
         if (val == NULL || val->type != MVN_VAL_I32 || val->i32 != (int)i) {
             fprintf(stderr, "Hash map lookup error for key %s\n", key);
         }

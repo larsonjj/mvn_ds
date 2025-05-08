@@ -352,7 +352,7 @@ mvn_val_t *mvn_hmap_get(const mvn_hmap_t *hmap, const mvn_str_t *key)
  * @param key_cstr The C string key to look up.
  * @return A pointer to the mvn_val_t associated with the key, or NULL if not found.
  */
-mvn_val_t *mvn_hmap_get_cstr(const mvn_hmap_t *hmap, const char *key_cstr)
+mvn_val_t *mvn_hmap_cstr(const mvn_hmap_t *hmap, const char *key_cstr)
 {
     if (hmap == NULL || key_cstr == NULL || hmap->capacity == 0 || hmap->buckets == NULL) {
         return NULL;
@@ -451,7 +451,7 @@ bool mvn_hmap_delete_cstr(mvn_hmap_t *hmap, const char *key_cstr)
  * @param hmap The hash map. Can be NULL.
  * @return The number of key-value pairs, or 0 if the map is NULL.
  */
-size_t mvn_hmap_get_count(const mvn_hmap_t *hmap)
+size_t mvn_hmap_count(const mvn_hmap_t *hmap)
 {
     /* Copyright (c) 2024 Jake Larson */
     if (hmap == NULL) {
@@ -465,7 +465,7 @@ size_t mvn_hmap_get_count(const mvn_hmap_t *hmap)
  * @param hmap The hash map. Can be NULL.
  * @return The capacity, or 0 if the map is NULL.
  */
-size_t mvn_hmap_get_capacity(const mvn_hmap_t *hmap)
+size_t mvn_hmap_capacity(const mvn_hmap_t *hmap)
 {
     /* Copyright (c) 2024 Jake Larson */
     if (hmap == NULL) {
@@ -515,5 +515,5 @@ bool mvn_hmap_contains_key_cstr(const mvn_hmap_t *hmap, const char *key_cstr)
     if (hmap == NULL || key_cstr == NULL) {
         return false;
     }
-    return mvn_hmap_get_cstr(hmap, key_cstr) != NULL;
+    return mvn_hmap_cstr(hmap, key_cstr) != NULL;
 }

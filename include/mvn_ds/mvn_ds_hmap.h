@@ -42,7 +42,7 @@ bool mvn_hmap_set_cstr(mvn_hmap_t *hmap, const char *key_cstr, mvn_val_t value);
 mvn_val_t *mvn_hmap_get(const mvn_hmap_t *hmap, const mvn_str_t *key);
 
 // Retrieves a pointer to the value associated with a given C string key.
-mvn_val_t *mvn_hmap_get_cstr(const mvn_hmap_t *hmap, const char *key_cstr);
+mvn_val_t *mvn_hmap_cstr(const mvn_hmap_t *hmap, const char *key_cstr);
 
 // Deletes a key-value pair from the hash map using an mvn_str_t key.
 bool mvn_hmap_delete(mvn_hmap_t *hmap, const mvn_str_t *key);
@@ -51,10 +51,10 @@ bool mvn_hmap_delete(mvn_hmap_t *hmap, const mvn_str_t *key);
 bool mvn_hmap_delete_cstr(mvn_hmap_t *hmap, const char *key_cstr);
 
 // Returns the number of key-value pairs in the hash map.
-size_t mvn_hmap_get_count(const mvn_hmap_t *hmap);
+size_t mvn_hmap_count(const mvn_hmap_t *hmap);
 
 // Returns the current capacity (number of buckets) of the hash map.
-size_t mvn_hmap_get_capacity(const mvn_hmap_t *hmap);
+size_t mvn_hmap_capacity(const mvn_hmap_t *hmap);
 
 // Checks if the hash map is empty.
 bool mvn_hmap_is_empty(const mvn_hmap_t *hmap);
