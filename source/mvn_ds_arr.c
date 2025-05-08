@@ -23,13 +23,12 @@
  */
 static void *mvn_arr_reallocate(void *pointer, size_t new_size)
 {
-    // old_size is not needed for standard realloc
     if (new_size == 0) {
         MVN_DS_FREE(pointer);
         return NULL;
     }
     void *result = MVN_DS_REALLOC(pointer, new_size);
-    if (result == NULL && new_size > 0) { // Check if allocation actually failed
+    if (result == NULL && new_size > 0) {
         fprintf(stderr, "[MVN_DS_ARR] Memory reallocation failed!\n");
     }
     return result;
@@ -53,17 +52,16 @@ static bool mvn_arr_ensure_capacity(mvn_arr_t *array)
                               old_capacity * MVN_DS_ARR_GROWTH_FACTOR;
 
     // Check for potential overflow during growth calculation
-    if (new_capacity < old_capacity && old_capacity > 0) { // Check if overflow occurred
+    if (new_capacity < old_capacity && old_capacity > 0) {
         fprintf(stderr, "[MVN_DS_ARR] Array capacity overflow during resize calculation.\n");
-        // Try setting to count + 1 as a last resort if possible
         if (SIZE_MAX - 1 < array->count) {
-            return false; // Cannot even add one more element
-        }
-        new_capacity = array->count + 1;
-        if (new_capacity <= old_capacity) { // Still not enough or wrapped around
             return false;
         }
-    } else if (new_capacity == 0 && old_capacity == 0) { // Handle initial allocation case
+        new_capacity = array->count + 1;
+        if (new_capacity <= old_capacity) {
+            return false;
+        }
+    } else if (new_capacity == 0 && old_capacity == 0) {
         new_capacity = MVN_DS_ARR_INITIAL_CAPACITY;
     }
 
@@ -74,9 +72,7 @@ static bool mvn_arr_ensure_capacity(mvn_arr_t *array)
     }
     size_t allocation_size = new_capacity * sizeof(mvn_val_t);
 
-    // Pass only pointer and new_size to the local mvn_arr_reallocate
-    mvn_val_t *new_data =
-        (mvn_val_t *)mvn_arr_reallocate(array->data, allocation_size); // Updated call site
+    mvn_val_t *new_data = (mvn_val_t *)mvn_arr_reallocate(array->data, allocation_size);
     if (!new_data) {
         return false;
     }
@@ -108,24 +104,18 @@ mvn_arr_t *mvn_arr_new_capacity(size_t capacity)
     array->count    = 0;
     array->capacity = capacity;
     if (capacity > 0) {
-        // Check for overflow before calculating allocation size
         if (capacity > SIZE_MAX / sizeof(mvn_val_t)) {
             MVN_DS_FREE(array);
             fprintf(stderr, "[MVN_DS_ARR] Initial capacity overflow.\n");
             return NULL;
         }
-        size_t allocation_size = capacity * sizeof(mvn_val_t);
-        array->data            = (mvn_val_t *)MVN_DS_MALLOC(allocation_size);
+        array->data = (mvn_val_t *)MVN_DS_CALLOC(capacity, sizeof(mvn_val_t));
         if (!array->data) {
             MVN_DS_FREE(array);
             return NULL;
         }
-        // Initialize to NULL
-        for (size_t index = 0; index < capacity; ++index) {
-            array->data[index] = mvn_val_null();
-        }
     } else {
-        array->data = NULL; // No initial allocation if capacity is 0
+        array->data = NULL;
     }
     return array;
 }
@@ -137,7 +127,6 @@ mvn_arr_t *mvn_arr_new_capacity(size_t capacity)
  */
 mvn_arr_t *mvn_arr_new(void)
 {
-    // Use MVN_DS_ARR_INITIAL_CAPACITY by default
     return mvn_arr_new_capacity(MVN_DS_ARR_INITIAL_CAPACITY);
 }
 
@@ -152,14 +141,13 @@ void mvn_arr_free(mvn_arr_t *array)
     if (!array) {
         return;
     }
-    // Free contained values if data buffer exists
     if (array->data) {
         for (size_t index = 0; index < array->count; index++) {
             mvn_val_free(&array->data[index]);
         }
-        MVN_DS_FREE(array->data); // Free the data buffer
+        MVN_DS_FREE(array->data);
     }
-    MVN_DS_FREE(array); // Free the array struct itself
+    MVN_DS_FREE(array);
 }
 
 /**
@@ -173,16 +161,13 @@ void mvn_arr_free(mvn_arr_t *array)
 bool mvn_arr_push(mvn_arr_t *array, mvn_val_t value)
 {
     if (!array) {
-        // If array is NULL, we cannot take ownership, so free the value if needed.
         mvn_val_free(&value);
         return false;
     }
     if (!mvn_arr_ensure_capacity(array)) {
-        // If resize fails, we cannot take ownership, so free the value if needed.
         mvn_val_free(&value);
         return false;
     }
-    // Place the value (transfers ownership) and increment count
     array->data[array->count] = value;
     array->count++;
     return true;
@@ -217,13 +202,10 @@ mvn_val_t *mvn_arr_get(const mvn_arr_t *array, size_t index)
 bool mvn_arr_set(mvn_arr_t *array, size_t index, mvn_val_t value)
 {
     if (!array || index >= array->count) {
-        // If index is invalid, we cannot take ownership, so free the value if needed.
         mvn_val_free(&value);
         return false;
     }
-    // Free the old value at the index before overwriting
     mvn_val_free(&array->data[index]);
-    // Assign the new value (transfers ownership)
     array->data[index] = value;
     return true;
 }
@@ -235,10 +217,7 @@ bool mvn_arr_set(mvn_arr_t *array, size_t index, mvn_val_t value)
  */
 size_t mvn_arr_count(const mvn_arr_t *array)
 {
-    if (!array) {
-        return 0;
-    }
-    return array->count;
+    return array ? array->count : 0;
 }
 
 /**
@@ -248,10 +227,7 @@ size_t mvn_arr_count(const mvn_arr_t *array)
  */
 size_t mvn_arr_capacity(const mvn_arr_t *array)
 {
-    if (!array) {
-        return 0;
-    }
-    return array->capacity;
+    return array ? array->capacity : 0;
 }
 
 /**
@@ -261,8 +237,5 @@ size_t mvn_arr_capacity(const mvn_arr_t *array)
  */
 bool mvn_arr_is_empty(const mvn_arr_t *array)
 {
-    if (!array) {
-        return true; // A NULL array is considered empty
-    }
-    return array->count == 0;
+    return !array || array->count == 0;
 }
