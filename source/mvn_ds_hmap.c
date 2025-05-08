@@ -24,9 +24,9 @@
  * @param[out] prev Optional pointer to store the previous entry (for deletion).
  * @return Pointer to the found entry, or NULL if not found.
  */
-static mvn_hmap_entry_t *mvn_hmap_find_entry(mvn_hmap_entry_t  *head,
-                                             const mvn_str_t   *key,
-                                             uint32_t           hash,
+static mvn_hmap_entry_t *mvn_hmap_find_entry(mvn_hmap_entry_t *head,
+                                             const mvn_str_t  *key,
+                                             uint32_t hash, // Hash of the key being searched for
                                              mvn_hmap_entry_t **prev)
 {
     mvn_hmap_entry_t *current_entry = head;
@@ -35,7 +35,8 @@ static mvn_hmap_entry_t *mvn_hmap_find_entry(mvn_hmap_entry_t  *head,
     }
     while (current_entry != NULL) {
         // Optimization: Check hash first, then full key equality
-        if (current_entry->key != NULL && mvn_str_hash(current_entry->key) == hash &&
+        if (current_entry->hash == hash && // Compare stored hash with the search key's hash
+            current_entry->key != NULL &&  // Key should not be NULL here
             mvn_str_equal(current_entry->key, key)) {
             return current_entry;
         }
@@ -84,8 +85,7 @@ static bool mvn_hmap_adjust_capacity(mvn_hmap_t *hmap, size_t new_capacity)
             // Recalculate index in the new bucket array
             // Ensure entry->key is valid before hashing
             if (current_entry->key != NULL) {
-                uint32_t hash_value = mvn_str_hash(current_entry->key);
-                size_t   index_new  = hash_value % new_capacity;
+                size_t index_new = current_entry->hash % new_capacity; // Use stored hash
 
                 // Insert entry at the head of the new bucket's list
                 current_entry->next    = new_buckets[index_new];
@@ -267,8 +267,9 @@ bool mvn_hmap_set(mvn_hmap_t *hmap, mvn_str_t *key, mvn_val_t value)
             mvn_val_free(&value);
             return false;
         }
-        new_entry->key   = key;   // Take ownership of the provided key
-        new_entry->value = value; // Take ownership of the provided value
+        new_entry->key   = key;        // Take ownership of the provided key
+        new_entry->hash  = hash_value; // Store the pre-calculated hash
+        new_entry->value = value;      // Take ownership of the provided value
 
         // Insert at the head of the bucket's list
         new_entry->next      = hmap->buckets[index];

@@ -97,6 +97,7 @@ struct mvn_arr_t {
  */
 struct mvn_hmap_entry_t {
     mvn_str_t        *key;   /**< Owned key for the entry. */
+    uint32_t          hash;  /**< Pre-calculated hash of the key. */
     mvn_val_t         value; /**< Owned value for the entry. */
     mvn_hmap_entry_t *next;  /**< Pointer to the next entry in case of collision. */
 };
