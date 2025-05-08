@@ -2,12 +2,12 @@
 
 set -e
 
-# Define time limits for each benchmark (in seconds)
+# Define time limits for each benchmark (in milliseconds)
 declare -A BENCHMARK_LIMITS=(
-    ["mvn_ds_arr_benchmark"]=1
-    ["mvn_ds_hmap_benchmark"]=1
-    ["mvn_ds_string_benchmark"]=1
-    ["mvn_ds_primitives_benchmark"]=1
+    ["mvn_ds_arr_benchmark"]=500
+    ["mvn_ds_hmap_benchmark"]=500
+    ["mvn_ds_string_benchmark"]=500
+    ["mvn_ds_primitives_benchmark"]=100
 )
 
 # Directory containing the benchmark executables
@@ -24,15 +24,15 @@ for BENCHMARK in "${!BENCHMARK_LIMITS[@]}"; do
     fi
 
     echo "Running $BENCHMARK..."
-    START_TIME=$(date +%s)
+    START_TIME=$(($(date +%s%N) / 1000000)) # Get current time in milliseconds
     $BENCHMARK_PATH
-    END_TIME=$(date +%s)
+    END_TIME=$(($(date +%s%N) / 1000000)) # Get current time in milliseconds
 
     ELAPSED_TIME=$((END_TIME - START_TIME))
-    echo "$BENCHMARK completed in $ELAPSED_TIME seconds."
+    echo "$BENCHMARK completed in $ELAPSED_TIME ms."
 
     if (( ELAPSED_TIME > TIME_LIMIT )); then
-        echo "Error: $BENCHMARK exceeded the time limit of $TIME_LIMIT seconds."
+        echo "Error: $BENCHMARK exceeded the time limit of $TIME_LIMIT ms."
         exit 1
     fi
 done
