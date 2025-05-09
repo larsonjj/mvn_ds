@@ -45,6 +45,20 @@ bool mvn_str_equal_cstr(const mvn_str_t *str1_ptr, const char *cstr2);
 // Calculates a hash value for the string (FNV-1a algorithm).
 uint32_t mvn_str_hash(const mvn_str_t *string_ptr);
 
+// Creates a new string by converting the given string to uppercase.
+// Returns NULL on allocation failure or if string_ptr is NULL.
+mvn_str_t *mvn_str_to_uppercase(const mvn_str_t *string_ptr);
+
+// Creates a new string by converting the given string to lowercase.
+// Returns NULL on allocation failure or if string_ptr is NULL.
+mvn_str_t *mvn_str_to_lowercase(const mvn_str_t *string_ptr);
+
+// Checks if the string starts with the given prefix.
+bool mvn_str_starts_with_cstr(const mvn_str_t *string_ptr, const char *prefix);
+
+// Checks if the string ends with the given suffix.
+bool mvn_str_ends_with_cstr(const mvn_str_t *string_ptr, const char *suffix);
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

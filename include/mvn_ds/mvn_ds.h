@@ -53,6 +53,16 @@ void mvn_val_print(const mvn_val_t *value);
 // Compares two mvn_val_t values for equality.
 bool mvn_val_equal(const mvn_val_t *val_one, const mvn_val_t *val_two);
 
+// Creates a deep copy of a mvn_val_t.
+// For dynamic types (STRING, ARRAY, HASHMAP), this means new allocations and copying content.
+// For PTR type, the pointer value is copied, not the data it points to.
+mvn_val_t mvn_val_deep_copy(const mvn_val_t *original_value);
+
+// Compares two mvn_val_t values. Useful for sorting.
+// Returns <0 if val_one < val_two, 0 if equal, >0 if val_one > val_two.
+// Comparison order between different types is defined (e.g., NULL < BOOL < I32 < STRING ...).
+int mvn_val_compare(const mvn_val_t *val_one, const mvn_val_t *val_two);
+
 // Converts a mvn_val_type_t enum to its string representation.
 const char *mvn_val_type_to_str(mvn_val_type_t type);
 

@@ -65,6 +65,23 @@ bool mvn_hmap_contains_key(const mvn_hmap_t *hmap, const mvn_str_t *key);
 // Checks if the hash map contains the given C string key.
 bool mvn_hmap_contains_key_cstr(const mvn_hmap_t *hmap, const char *key_cstr);
 
+// Removes all key-value pairs from the hash map.
+// Keys and values are freed. The map's capacity is unchanged.
+void mvn_hmap_clear(mvn_hmap_t *hmap);
+
+// Retrieves all keys from the hash map as a new array of strings.
+// The caller owns the returned mvn_arr_t and its contents (copies of keys).
+// Returns NULL on allocation failure or if hmap is NULL.
+mvn_arr_t *mvn_hmap_keys(const mvn_hmap_t *hmap);
+
+// Retrieves all values from the hash map as a new array.
+// The caller owns the returned mvn_arr_t and its contents (deep copies of values).
+// Returns NULL on allocation failure or if hmap is NULL.
+mvn_arr_t *mvn_hmap_values(const mvn_hmap_t *hmap);
+
+// Returns the number of key-value pairs in the hash map (alias for mvn_hmap_count).
+size_t mvn_hmap_size(const mvn_hmap_t *hmap);
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

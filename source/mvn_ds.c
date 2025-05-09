@@ -16,7 +16,7 @@
 #include <stdint.h> // For int32_t, int64_t etc.
 #include <stdio.h>  // For printf (used in mvn_val_print)
 #include <stdlib.h> // For SIZE_MAX (if any remain)
-#include <string.h> // For strlen (if any remain)
+#include <string.h> // For strlen (if any remain), and memcpy for mvn_val_deep_copy
 
 // Define epsilon values for floating-point comparisons
 #define MVN_DS_FLOAT_EPSILON  1e-6f
@@ -630,5 +630,241 @@ bool mvn_val_equal(const mvn_val_t *val_one, const mvn_val_t *val_two)
                     "[MVN_DS] Warning: mvn_val_equal called on unknown type %d\n",
                     val_one->type);
             return false;
+    }
+}
+
+/**
+ * @brief Creates a deep copy of a mvn_val_t.
+ * For dynamic types (STRING, ARRAY, HASHMAP), this means new allocations and copying content.
+ * For PTR type, the pointer value is copied, not the data it points to.
+ * Primitive types are copied by value.
+ * @param original_value Pointer to the value to copy.
+ * @return A new mvn_val_t containing the deep-copied data.
+ *         Returns MVN_VAL_NULL if original_value is NULL or on allocation failure.
+ */
+mvn_val_t mvn_val_deep_copy(const mvn_val_t *original_value)
+{
+    if (!original_value) {
+        return mvn_val_null();
+    }
+
+    mvn_val_t copy_val;
+    copy_val.type = original_value->type;
+
+    switch (original_value->type) {
+        case MVN_VAL_NULL:
+            // Handled by mvn_val_null() if needed, but type is already set
+            break;
+        case MVN_VAL_BOOL:
+            copy_val.b = original_value->b;
+            break;
+        case MVN_VAL_I8:
+            copy_val.i8 = original_value->i8;
+            break;
+        case MVN_VAL_I16:
+            copy_val.i16 = original_value->i16;
+            break;
+        case MVN_VAL_I32:
+            copy_val.i32 = original_value->i32;
+            break;
+        case MVN_VAL_I64:
+            copy_val.i64 = original_value->i64;
+            break;
+        case MVN_VAL_U8:
+            copy_val.u8 = original_value->u8;
+            break;
+        case MVN_VAL_U16:
+            copy_val.u16 = original_value->u16;
+            break;
+        case MVN_VAL_U32:
+            copy_val.u32 = original_value->u32;
+            break;
+        case MVN_VAL_U64:
+            copy_val.u64 = original_value->u64;
+            break;
+        case MVN_VAL_F32:
+            copy_val.f32 = original_value->f32;
+            break;
+        case MVN_VAL_F64:
+            copy_val.f64 = original_value->f64;
+            break;
+        case MVN_VAL_CHAR:
+            copy_val.c = original_value->c;
+            break;
+        case MVN_VAL_PTR:
+            copy_val.ptr = original_value->ptr; // Shallow copy of pointer
+            break;
+        case MVN_VAL_STRING:
+            if (original_value->str && original_value->str->data) {
+                // Create a new string and copy content
+                mvn_str_t *new_str_ptr = mvn_str_new(original_value->str->data);
+                if (!new_str_ptr) {
+                    return mvn_val_null(); // Allocation failure
+                }
+                copy_val.str = new_str_ptr;
+            } else {
+                // Original string was NULL or had NULL data, create an empty or NULL string value
+                copy_val.str = mvn_str_new(""); // Or handle as mvn_val_null() if preferred
+                if (!copy_val.str) {
+                    return mvn_val_null();
+                }
+            }
+            break;
+        case MVN_VAL_ARRAY:
+            if (original_value->arr) {
+                mvn_arr_t *new_arr_ptr = mvn_arr_new_capacity(original_value->arr->count);
+                if (!new_arr_ptr) {
+                    return mvn_val_null(); // Allocation failure
+                }
+                for (size_t i = 0; i < original_value->arr->count; ++i) {
+                    mvn_val_t element_copy = mvn_val_deep_copy(&original_value->arr->data[i]);
+                    if (!mvn_arr_push(new_arr_ptr, element_copy)) {
+                        // Handle push failure: free already copied elements and the new array
+                        mvn_val_free(&element_copy); // Free the last problematic copy
+                        mvn_arr_free(new_arr_ptr);   // Frees other elements pushed so far
+                        return mvn_val_null();
+                    }
+                }
+                copy_val.arr = new_arr_ptr;
+            } else {
+                copy_val.arr = NULL; // Or mvn_arr_new() for an empty array
+            }
+            break;
+        case MVN_VAL_HASHMAP:
+            if (original_value->hmap) {
+                mvn_hmap_t *new_hmap_ptr = mvn_hmap_new_capacity(original_value->hmap->capacity);
+                if (!new_hmap_ptr) {
+                    return mvn_val_null(); // Allocation failure
+                }
+                // Iterate through the original hash map
+                // This requires an iterator or access to buckets, which mvn_hmap_t provides
+                for (size_t i = 0; i < original_value->hmap->capacity; ++i) {
+                    mvn_hmap_entry_t *current_entry = original_value->hmap->buckets[i];
+                    while (current_entry) {
+                        if (current_entry->key) { // Ensure key is not NULL
+                            mvn_str_t *key_copy_ptr = mvn_str_new(current_entry->key->data);
+                            if (!key_copy_ptr) {
+                                mvn_hmap_free(new_hmap_ptr);
+                                return mvn_val_null();
+                            }
+                            mvn_val_t value_copy = mvn_val_deep_copy(&current_entry->value);
+
+                            if (!mvn_hmap_set(new_hmap_ptr, key_copy_ptr, value_copy)) {
+                                // Handle set failure
+                                mvn_str_free(key_copy_ptr);
+                                mvn_val_free(&value_copy);
+                                mvn_hmap_free(new_hmap_ptr);
+                                return mvn_val_null();
+                            }
+                        }
+                        current_entry = current_entry->next;
+                    }
+                }
+                copy_val.hmap = new_hmap_ptr;
+            } else {
+                copy_val.hmap = NULL; // Or mvn_hmap_new() for an empty map
+            }
+            break;
+        default:
+            // Should not happen if all types are handled
+            fprintf(stderr,
+                    "[MVN_DS] Warning: mvn_val_deep_copy called on unknown type %d\n",
+                    original_value->type);
+            return mvn_val_null();
+    }
+    return copy_val;
+}
+
+/**
+ * @brief Compares two mvn_val_t values.
+ *
+ * Defines a total order for mvn_val_t instances.
+ * - First compares by type (e.g., NULL < BOOL < I32 < STRING).
+ * - If types are the same, performs type-specific comparison.
+ * - For strings, uses lexicographical comparison.
+ * - For arrays and hashmaps, comparison is currently based on pointer address or count
+ *   (could be extended to content comparison if needed, but that's complex).
+ *   For simplicity in this example, we'll compare by count, then by pointer if counts are equal.
+ *
+ * @param val_one The first value.
+ * @param val_two The second value.
+ * @return <0 if val_one < val_two, 0 if equal, >0 if val_one > val_two.
+ *         Returns 0 if both are NULL pointers.
+ *         If one is NULL and other is not, NULL is considered less.
+ */
+int mvn_val_compare(const mvn_val_t *val_one, const mvn_val_t *val_two)
+{
+    if (val_one == NULL && val_two == NULL) return 0;
+    if (val_one == NULL) return -1; // NULL is less than non-NULL
+    if (val_two == NULL) return 1;  // Non-NULL is greater than NULL
+
+    if (val_one->type < val_two->type) return -1;
+    if (val_one->type > val_two->type) return 1;
+
+    // Types are the same, perform type-specific comparison
+    switch (val_one->type) {
+        case MVN_VAL_NULL:
+            return 0; // Both are NULL type
+        case MVN_VAL_BOOL:
+            return (val_one->b == val_two->b) ? 0 : (val_one->b < val_two->b ? -1 : 1);
+        case MVN_VAL_I8:
+            return (val_one->i8 == val_two->i8) ? 0 : (val_one->i8 < val_two->i8 ? -1 : 1);
+        case MVN_VAL_I16:
+            return (val_one->i16 == val_two->i16) ? 0 : (val_one->i16 < val_two->i16 ? -1 : 1);
+        case MVN_VAL_I32:
+            return (val_one->i32 == val_two->i32) ? 0 : (val_one->i32 < val_two->i32 ? -1 : 1);
+        case MVN_VAL_I64:
+            return (val_one->i64 == val_two->i64) ? 0 : (val_one->i64 < val_two->i64 ? -1 : 1);
+        case MVN_VAL_U8:
+            return (val_one->u8 == val_two->u8) ? 0 : (val_one->u8 < val_two->u8 ? -1 : 1);
+        case MVN_VAL_U16:
+            return (val_one->u16 == val_two->u16) ? 0 : (val_one->u16 < val_two->u16 ? -1 : 1);
+        case MVN_VAL_U32:
+            return (val_one->u32 == val_two->u32) ? 0 : (val_one->u32 < val_two->u32 ? -1 : 1);
+        case MVN_VAL_U64:
+            return (val_one->u64 == val_two->u64) ? 0 : (val_one->u64 < val_two->u64 ? -1 : 1);
+        case MVN_VAL_F32: {
+            float diff = val_one->f32 - val_two->f32;
+            if (fabsf(diff) < MVN_DS_FLOAT_EPSILON) return 0;
+            return diff < 0 ? -1 : 1;
+        }
+        case MVN_VAL_F64: {
+            double diff = val_one->f64 - val_two->f64;
+            if (fabs(diff) < MVN_DS_DOUBLE_EPSILON) return 0;
+            return diff < 0 ? -1 : 1;
+        }
+        case MVN_VAL_CHAR:
+            return (val_one->c == val_two->c) ? 0 : (val_one->c < val_two->c ? -1 : 1);
+        case MVN_VAL_PTR: // Compare by pointer address
+            if (val_one->ptr == val_two->ptr) return 0;
+            return (val_one->ptr < val_two->ptr) ? -1 : 1;
+        case MVN_VAL_STRING:
+            if (val_one->str == val_two->str) return 0; // Both point to same string or both NULL
+            if (!val_one->str) return -1;               // NULL string is less
+            if (!val_two->str) return 1;                // Non-NULL string is greater
+            // Both strings are non-NULL, compare their data
+            if (val_one->str->data == val_two->str->data) return 0;
+            if (!val_one->str->data) return -1;
+            if (!val_two->str->data) return 1;
+            return strcmp(val_one->str->data, val_two->str->data);
+        case MVN_VAL_ARRAY:
+            // Simplified comparison: by count, then by address.
+            if (val_one->arr == val_two->arr) return 0;
+            if (!val_one->arr) return -1;
+            if (!val_two->arr) return 1;
+            if (val_one->arr->count < val_two->arr->count) return -1;
+            if (val_one->arr->count > val_two->arr->count) return 1;
+            // Counts are equal, compare by address for a consistent order
+            return (val_one->arr < val_two->arr) ? -1 : (val_one->arr > val_two->arr ? 1 : 0);
+        case MVN_VAL_HASHMAP:
+            // Simplified comparison: by count, then by address.
+            if (val_one->hmap == val_two->hmap) return 0;
+            if (!val_one->hmap) return -1;
+            if (!val_two->hmap) return 1;
+            if (val_one->hmap->count < val_two->hmap->count) return -1;
+            if (val_one->hmap->count > val_two->hmap->count) return 1;
+            return (val_one->hmap < val_two->hmap) ? -1 : (val_one->hmap > val_two->hmap ? 1 : 0);
+        default:
+            return 0; // Should not happen
     }
 }

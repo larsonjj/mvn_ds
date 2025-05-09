@@ -3,15 +3,16 @@
  */
 #include "mvn_ds/mvn_ds_hmap.h"
 
-#include "mvn_ds/mvn_ds.h"     // For mvn_val_free
-#include "mvn_ds/mvn_ds_str.h" // Needed for mvn_str_hash, mvn_str_equal, mvn_str_new, mvn_str_free
-#include "mvn_ds/mvn_ds_utils.h" // For memory macros (MVN_DS_*)
+#include "mvn_ds/mvn_ds.h"       // For mvn_val_free, mvn_val_deep_copy, mvn_val_str_take
+#include "mvn_ds/mvn_ds_arr.h"   // For mvn_arr_new_capacity, mvn_arr_push
+#include "mvn_ds/mvn_ds_str.h"   // For mvn_str_free, mvn_str_new, mvn_str_hash
+#include "mvn_ds/mvn_ds_utils.h" // For MVN_DS_MALLOC, MVN_DS_FREE, MVN_DS_CALLOC
 
 #include <assert.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h> // For SIZE_MAX
-#include <string.h> // For strlen
+#include <string.h> // For strcmp, strlen
 
 // --- Static Helper Functions ---
 
@@ -517,4 +518,116 @@ bool mvn_hmap_contains_key_cstr(const mvn_hmap_t *hmap, const char *key_cstr)
         return false;
     }
     return mvn_hmap_cstr(hmap, key_cstr) != NULL;
+}
+
+/**
+ * @brief Removes all key-value pairs from the hash map.
+ * Keys and values are freed. The map's capacity is unchanged.
+ * @param hmap The hash map to clear. Can be NULL.
+ */
+void mvn_hmap_clear(mvn_hmap_t *hmap)
+{
+    if (hmap == NULL) {
+        return;
+    }
+
+    for (size_t i = 0; i < hmap->capacity; ++i) {
+        mvn_hmap_entry_t *current_entry = hmap->buckets[i];
+        while (current_entry != NULL) {
+            mvn_hmap_entry_t *next_entry = current_entry->next;
+            mvn_str_free(current_entry->key);
+            mvn_val_free(&current_entry->value);
+            MVN_DS_FREE(current_entry);
+            current_entry = next_entry;
+        }
+        hmap->buckets[i] = NULL; // Clear the bucket pointer
+    }
+    hmap->count = 0;
+}
+
+/**
+ * @brief Retrieves all keys from the hash map as a new array of strings.
+ * The caller owns the returned mvn_arr_t and its contents (copies of keys).
+ * @param hmap The hash map. Can be NULL.
+ * @return A new mvn_arr_t containing copies of all keys, or NULL on failure or if hmap is NULL.
+ */
+mvn_arr_t *mvn_hmap_keys(const mvn_hmap_t *hmap)
+{
+    if (hmap == NULL) {
+        return NULL;
+    }
+
+    mvn_arr_t *keys_array = mvn_arr_new_capacity(hmap->count);
+    if (keys_array == NULL) {
+        return NULL; // Failed to allocate array
+    }
+
+    for (size_t i = 0; i < hmap->capacity; ++i) {
+        mvn_hmap_entry_t *current_entry = hmap->buckets[i];
+        while (current_entry != NULL) {
+            if (current_entry->key != NULL) { // Should always be true for valid entries
+                mvn_str_t *key_copy = mvn_str_new(current_entry->key->data);
+                if (key_copy == NULL) {
+                    mvn_arr_free(keys_array); // Clean up partially filled array
+                    return NULL;              // Failed to copy key
+                }
+                if (!mvn_arr_push(keys_array, mvn_val_str_take(key_copy))) {
+                    mvn_str_free(key_copy);   // Free the unpushed key copy
+                    mvn_arr_free(keys_array); // Clean up
+                    return NULL;              // Failed to push to array
+                }
+            }
+            current_entry = current_entry->next;
+        }
+    }
+    return keys_array;
+}
+
+/**
+ * @brief Retrieves all values from the hash map as a new array.
+ * The caller owns the returned mvn_arr_t and its contents (deep copies of values).
+ * @param hmap The hash map. Can be NULL.
+ * @return A new mvn_arr_t containing deep copies of all values, or NULL on failure or if hmap is NULL.
+ */
+mvn_arr_t *mvn_hmap_values(const mvn_hmap_t *hmap)
+{
+    if (hmap == NULL) {
+        return NULL;
+    }
+
+    mvn_arr_t *values_array = mvn_arr_new_capacity(hmap->count);
+    if (values_array == NULL) {
+        return NULL; // Failed to allocate array
+    }
+
+    for (size_t i = 0; i < hmap->capacity; ++i) {
+        mvn_hmap_entry_t *current_entry = hmap->buckets[i];
+        while (current_entry != NULL) {
+            mvn_val_t value_copy = mvn_val_deep_copy(&current_entry->value);
+            // Check if deep copy failed (e.g., returned MVN_VAL_NULL for a non-NULL original due to alloc failure)
+            if (value_copy.type == MVN_VAL_NULL && current_entry->value.type != MVN_VAL_NULL) {
+                mvn_arr_free(values_array); // Clean up partially filled array
+                return NULL;                // Deep copy failed
+            }
+
+            if (!mvn_arr_push(values_array, value_copy)) {
+                mvn_val_free(&value_copy);  // Free the unpushed value copy
+                mvn_arr_free(values_array); // Clean up
+                return NULL;                // Failed to push to array
+            }
+            current_entry = current_entry->next;
+        }
+    }
+    return values_array;
+}
+
+/**
+ * @brief Returns the number of key-value pairs in the hash map.
+ * This is an alias for mvn_hmap_count.
+ * @param hmap The hash map. Can be NULL.
+ * @return The number of elements, or 0 if hmap is NULL.
+ */
+size_t mvn_hmap_size(const mvn_hmap_t *hmap)
+{
+    return mvn_hmap_count(hmap);
 }

@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <stdlib.h> // For SIZE_MAX
 #include <string.h> // For strlen, memcpy, memcmp
+#include <ctype.h>  // For toupper, tolower
 
 // FNV-1a constants
 #define FNV_OFFSET_BASIS 2166136261U
@@ -296,4 +297,92 @@ uint32_t mvn_str_hash(const mvn_str_t *string_ptr)
         hash_value *= FNV_PRIME;
     }
     return hash_value;
+}
+
+/**
+ * @brief Creates a new string by converting the given string to uppercase.
+ * The caller owns the returned string and must free it using mvn_str_free.
+ * @param string_ptr The source string.
+ * @return A new mvn_str_t with uppercase content, or NULL on failure.
+ */
+mvn_str_t *mvn_str_to_uppercase(const mvn_str_t *string_ptr)
+{
+    if (!string_ptr || !string_ptr->data) {
+        return NULL;
+    }
+    mvn_str_t *upper_str_ptr = mvn_str_new_capacity(string_ptr->length);
+    if (!upper_str_ptr) {
+        return NULL;
+    }
+    for (size_t i = 0; i < string_ptr->length; ++i) {
+        upper_str_ptr->data[i] = (char)toupper((unsigned char)string_ptr->data[i]);
+    }
+    upper_str_ptr->data[string_ptr->length] = '\0';
+    upper_str_ptr->length                   = string_ptr->length;
+    return upper_str_ptr;
+}
+
+/**
+ * @brief Creates a new string by converting the given string to lowercase.
+ * The caller owns the returned string and must free it using mvn_str_free.
+ * @param string_ptr The source string.
+ * @return A new mvn_str_t with lowercase content, or NULL on failure.
+ */
+mvn_str_t *mvn_str_to_lowercase(const mvn_str_t *string_ptr)
+{
+    if (!string_ptr || !string_ptr->data) {
+        return NULL;
+    }
+    mvn_str_t *lower_str_ptr = mvn_str_new_capacity(string_ptr->length);
+    if (!lower_str_ptr) {
+        return NULL;
+    }
+    for (size_t i = 0; i < string_ptr->length; ++i) {
+        lower_str_ptr->data[i] = (char)tolower((unsigned char)string_ptr->data[i]);
+    }
+    lower_str_ptr->data[string_ptr->length] = '\0';
+    lower_str_ptr->length                   = string_ptr->length;
+    return lower_str_ptr;
+}
+
+/**
+ * @brief Checks if the string starts with the given C-string prefix.
+ * @param string_ptr The string to check.
+ * @param prefix The C-string prefix.
+ * @return true if string_ptr starts with prefix, false otherwise.
+ */
+bool mvn_str_starts_with_cstr(const mvn_str_t *string_ptr, const char *prefix)
+{
+    if (!string_ptr || !string_ptr->data || !prefix) {
+        return false;
+    }
+    size_t prefix_len = strlen(prefix);
+    if (prefix_len == 0) {
+        return true; // Empty prefix always matches
+    }
+    if (string_ptr->length < prefix_len) {
+        return false;
+    }
+    return strncmp(string_ptr->data, prefix, prefix_len) == 0;
+}
+
+/**
+ * @brief Checks if the string ends with the given C-string suffix.
+ * @param string_ptr The string to check.
+ * @param suffix The C-string suffix.
+ * @return true if string_ptr ends with suffix, false otherwise.
+ */
+bool mvn_str_ends_with_cstr(const mvn_str_t *string_ptr, const char *suffix)
+{
+    if (!string_ptr || !string_ptr->data || !suffix) {
+        return false;
+    }
+    size_t suffix_len = strlen(suffix);
+    if (suffix_len == 0) {
+        return true; // Empty suffix always matches
+    }
+    if (string_ptr->length < suffix_len) {
+        return false;
+    }
+    return strcmp(string_ptr->data + string_ptr->length - suffix_len, suffix) == 0;
 }
