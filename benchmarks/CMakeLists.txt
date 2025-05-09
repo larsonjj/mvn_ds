@@ -6,7 +6,7 @@ set(MVN_BENCHMARK_SOURCES
     ${MVN_BENCHMARK_SOURCE_DIR}/mvn_ds_arr_benchmark.c
     ${MVN_BENCHMARK_SOURCE_DIR}/mvn_ds_hmap_benchmark.c
     ${MVN_BENCHMARK_SOURCE_DIR}/mvn_ds_string_benchmark.c
-    ${MVN_BENCHMARK_SOURCE_DIR}/mvn_ds_primitives_benchmark.c # Add the new benchmark here
+    ${MVN_BENCHMARK_SOURCE_DIR}/mvn_ds_primitives_benchmark.c
 )
 
 # List to store all benchmark targets
